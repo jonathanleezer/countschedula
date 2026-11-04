@@ -21,6 +21,11 @@ These checks do not certify complete clinical correctness.
 11. Mobile sidebar closes on navigation, close button, outside click, Escape. Tab/Enter can open assignment editor. Test real touch separately.
 12. Reload: saved workspace remains. Session-only filters/undo reset as documented.
 
-## Before shared backend release
+## Shared backend
+
+- `npm run test:db`: rules, RLS isolation, roles, stale versions, publication, append-only history, import round-trip, sign-up hook, workspace deletion.
+- Live check (2026-11-04, QA workspace, since deleted): sign-in gate, magic link, previewed import, server rejection of client-bypassed rule breaks, form/drag/undo saves, publish lock, stale-tab refusal, invites, snapshots, viewer read-only, mobile nav, sign-out.
+
+## Before wider release
 
 Add tenant-isolation, permission, concurrency, publication/version, transaction, migration, import/schema, solver, DST, accessibility, and browser integration tests. Confirm no real provider information is sent to external services without explicit configuration and authorization.

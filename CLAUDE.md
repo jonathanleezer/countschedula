@@ -4,7 +4,7 @@ Read `README.md`, `docs/REQUIREMENTS.md`, `docs/ARCHITECTURE.md`, `docs/KNOWN-GA
 
 ## Product and scope
 
-CountSchedula is a constraint-aware inpatient OB provider scheduling SaaS in development. Primary users are CNMs, schedulers, and department leads. Providers may work across organizations and departments. Current implementation is a browser-local pilot.
+CountSchedula is a constraint-aware inpatient OB provider scheduling SaaS in development. Primary users are CNMs, schedulers, and department leads. Providers may work across organizations and departments. The hosted app (https://countschedula.vercel.app) uses a Supabase backend; without `config.js` settings the same UI runs as the original browser-local pilot.
 
 Brand: CountSchedula. Tagline: “Because staff scheduling doesn't have to suck the life out of you!” Workspace: Vanderbilt Midwives. Organizations: Jones Team and Boehm Team. Jones Team is the initial display selection. Do not restore the former Willow/Riverside labels in user-facing UI.
 
@@ -25,4 +25,4 @@ Brand: CountSchedula. Tagline: “Because staff scheduling doesn't have to suck 
 - Keep credentials out of source and commits. Do not deploy or change public access unless requested.
 - Make focused changes and report the behavior changed, checks run, and remaining limitations.
 
-No production stack has been selected. Discuss material framework/backend/deployment decisions before committing to a rewrite or paid service. Local reversible improvements within a requested task do not need repeated approval.
+Stack (chosen 2026-11-04): buildless HTML/CSS/JS UI kept as-is, Supabase (Postgres, Auth magic link, RLS, SECURITY DEFINER RPCs) on the Free plan, Vercel static hosting. Server rules live in `supabase/migrations/`; add new migrations rather than editing applied ones, and keep `cs_violations()` in step with `violations()` in `dist/app.js`. Run `npm test`, `npm run test:db`, and `npm run test:browser`. See `docs/OPERATIONS.md`. Discuss paid plans, framework rewrites, and access changes before making them. Local reversible improvements within a requested task do not need repeated approval.

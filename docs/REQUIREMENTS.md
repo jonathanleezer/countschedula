@@ -33,9 +33,16 @@ Reduce the burden of scheduling inpatient OB providers, initially Certified Nurs
 - Publish when required coverage is complete and configured rule conflicts are absent; reopen draft; per-department/month state and stored snapshot.
 - Monthly reports (provider workload across affiliations), selected-organization calendar CSV export, JSON backup/restore, local activity trail, session undo.
 
+## Implemented shared backend (2026-11-04)
+
+- Supabase Postgres with row-level security; Vercel static hosting at https://countschedula.vercel.app.
+- Email magic-link sign-in, invite-only; roles admin, scheduler, viewer.
+- Server-side validation of all hard rules and publication locks on every save; optimistic concurrency.
+- Immutable publication history and audit log; rollback snapshots; previewed admin-only restore.
+
 ## Proposed / not implemented
 
-Role-based access for admin/scheduler, department lead, provider, read-only stakeholder; provider preview; swaps; conditional approval exceptions; affiliation-specific contracts and quotas; holiday fairness; credential/privilege validation; organization and department CRUD; notifications; archived schedule workflow; explainable optimization solver; shared secure storage and real authentication.
+Department-lead and provider roles; provider preview; swaps; conditional approval exceptions; affiliation-specific contracts and quotas; holiday fairness; credential/privilege validation; organization and department CRUD; notifications; archived schedule workflow; explainable optimization solver; shared secure storage and real authentication.
 
 Hard / conditional / soft taxonomy is the intended design. The pilot blocks hard violations and has no approved-exception workflow. Safety and coverage outrank contractual/site rules, fairness, then preferences; infeasibility must be surfaced, not hidden.
 
@@ -45,4 +52,4 @@ Payroll, EMR integration, full messaging system, and call scheduling. Revisit on
 
 ## Unresolved decisions
 
-Production stack, hosting, pricing, exact rule values/calculation periods, per-affiliation rule precedence, holiday/weekend definitions, time zones and DST, shift-count versus hours/FTE accounting, organization information-sharing boundaries, multiuser publication/versioning, exception permissions, solver objectives, release criteria.
+Pricing/plan upgrades, SMTP provider, exact rule values/calculation periods, per-affiliation rule precedence, holiday/weekend definitions, time zones and DST, shift-count versus hours/FTE accounting, organization information-sharing boundaries, multiuser publication/versioning, exception permissions, solver objectives, release criteria.

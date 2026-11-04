@@ -1,8 +1,25 @@
-# CountSchedula — Claude Code handoff
+# CountSchedula
 
 **Because staff scheduling doesn't have to suck the life out of you!**
 
-This is the working application source, not screenshots or a rebuild brief. It runs independently of ChatGPT Sites. Current workspace: **Vanderbilt Midwives**, with **Jones Team** (default) and **Boehm Team**.
+Shared scheduling for **Vanderbilt Midwives** — **Jones Team** (default) and **Boehm Team**.
+
+- **Live app:** https://countschedula.vercel.app (invite-only sign-in by email link)
+- **Backend:** Supabase project `countschedula` (us-east-1) — see `docs/OPERATIONS.md`
+- **Local pilot mode:** `npm start` without Supabase settings runs the original browser-only app.
+
+## Develop
+
+```sh
+npm test            # domain checks (Node VM)
+npm run test:db     # migrations + server rules on a throwaway local PostgreSQL
+npm run test:browser  # Playwright acceptance checks (local mode)
+npm start           # http://localhost:3000
+```
+
+To run locally against the shared backend: `SUPABASE_URL=https://<ref>.supabase.co SUPABASE_PUBLISHABLE_KEY=sb_publishable_… npm start` (localhost:3000 is an allowed sign-in redirect).
+
+## Original handoff notes
 
 ## Start here
 
@@ -60,9 +77,14 @@ A new origin, hostname, port, browser, or profile has a separate localStorage st
 | `docs/KNOWN-GAPS.md` | Limits and code-review findings to investigate |
 | `docs/ACCEPTANCE.md` | Manual and automated acceptance checklist |
 | `docs/PROVENANCE.md` | Source commit, scope, and verification |
+| `docs/OPERATIONS.md` | Hosting, deploys, migrations, invites, email, backups, recovery |
+| `dist/cloud.js` | Shared-workspace client: sign-in, load/save, members, snapshots |
+| `supabase/migrations/` | Database schema, RLS, server rules, roles |
+| `supabase/tests/` | Database tests run by `npm run test:db` |
+| `scripts/build.cjs`, `vercel.json` | Production build and security headers |
 
 ## Current boundary
 
-This is a functioning **single-browser pilot**, not a production clinical scheduling service. No backend, user authentication, multiuser sync, permission enforcement, server audit retention, or globally optimal solver exists yet. “Published” locks are UI/local-data controls. The generation algorithm is deterministic greedy selection and may leave avoidable gaps. See the known-gaps document before real operational use.
+The hosted app has shared storage, sign-in, roles, server-enforced rules and publication locks, and append-only history. It has not had an independent security review or clinical validation, runs on free plans without database backups, and the generator is greedy and may leave avoidable gaps. Read `docs/KNOWN-GAPS.md` before relying on it for staffing.
 
 The original hosted app is not changed or removed by this handoff. Deploying this copy elsewhere is a separate step.

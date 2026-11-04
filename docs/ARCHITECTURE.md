@@ -39,3 +39,60 @@ Iterates missing slots in date/type order. Ranks affiliated providers by monthly
 ## Tests
 
 The three original `check*.cjs` files evaluate the application in Node's VM with mocked DOM/localStorage and suppress render/toast. They exercise domain logic and some generated HTML, not real browser interactions. They depend on the app's current initialization marker. Refactoring should preserve or deliberately migrate these checks. Browser tests should be added for drag/drop, touch, keyboard, forms, persistence, and mobile layout.
+
+## Shared backend (Supabase) — added 2026-11-04
+
+The same static UI runs in two modes, chosen by `config.js`:
+
+- **Browser-local pilot** (default for `npm start` without `SUPABASE_URL`): unchanged behavior, data in
+  localStorage key `countschedula-pilot-v1`.
+- **Shared workspace** (production): `scripts/build.cjs` writes `dist/config.js` with the Supabase URL,
+  publishable key and workspace id. `dist/cloud.js` handles magic-link sign-in, loads the workspace with
+  `get_state`, and sends every committed change to `save_state`. `npm start` also serves this mode when
+  `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` are set in the environment.
+
+### How a change is saved
+
+`app.js` still validates and mutates its in-memory `state`, then calls `persist()`. In shared mode
+`persist()` hands a copy of the whole state, the audit notes collected by `audit()`, and the version the
+client loaded to `save_state`. The server, in one transaction:
+
+1. checks the caller's role and the workspace version (`PT409` if someone else saved first; the client
+   reloads and asks the user to redo the change);
+2. validates payload shape and limits;
+3. computes which assignments are new or changed and which department-months they touch;
+4. refuses edits inside published periods, coverage/hour changes that would rewrite published
+   schedules, and PTO approvals that overlap assignments;
+5. applies the rows, then runs `cs_violations()` (a port of `violations()`) on every new or changed
+   assignment against all organizations; configuration changes may not add conflicts to published
+   periods;
+6. on Draft→Published, re-checks coverage and conflicts, stores the server-built snapshot in `periods`
+   and appends to `publications`;
+7. appends to `audit_log` (actor email, notes, change counts), bumps the version.
+
+Any rejection rolls back the whole save; the client reloads server state and shows the reason.
+Whole-state saves keep the existing UI intact; they are simple and fine at this team size (≈100 KB per
+year of schedules) but should become per-entity RPCs if workspaces grow large.
+
+### Tables
+
+`workspaces` (rules jsonb, timezone, version) · `departments` · `members` · `invitations` ·
+`providers` · `affiliations` · `shift_types` · `assignments` · `requests` · `periods` ·
+`publications` (append-only) · `audit_log` (append-only) · `state_snapshots`.
+Every table is keyed by `workspace_id`; legacy ids are kept verbatim. RLS lets members read their own
+workspace; there are no write policies — writes only happen through `SECURITY DEFINER` functions that
+check the role. API roles cannot execute any function except the listed RPCs.
+
+### Time
+
+Shift instants are computed in the workspace time zone (`America/Chicago`) on the server, and in the
+browser's local zone on the client. If a user's browser is in a different zone, or on a DST change
+night, client and server may disagree about an interval by up to an hour; the server's answer wins.
+
+### Tests
+
+- `npm test` — original Node VM domain checks plus syntax checks.
+- `npm run test:db` — applies the migrations to a throwaway local PostgreSQL with a stub of Supabase's
+  `auth` schema and runs `supabase/tests/domain.test.sql` (rules, RLS isolation, roles, concurrency,
+  publication, immutability, import round-trip, sign-up hook).
+- `npm run test:browser` — Playwright acceptance checks of the local mode (desktop and phone).

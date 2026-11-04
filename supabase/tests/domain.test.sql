@@ -172,4 +172,14 @@ select expect_fail($$select save_state('vm', 0, '{}'::jsonb)$$, 'PT403', 'access
 select t_login('');
 select expect_fail($$select get_state('vm')$$, 'PT403', 'access');
 reset role;
+-- operator removal of a whole workspace (see docs/OPERATIONS.md)
+begin;
+alter table audit_log disable trigger audit_log_append_only;
+alter table publications disable trigger publications_append_only;
+delete from workspaces where id = 'vm';
+alter table audit_log enable trigger audit_log_append_only;
+alter table publications enable trigger publications_append_only;
+commit;
+select t_assert(not exists (select 1 from assignments where workspace_id = 'vm') and not exists (select 1 from affiliations where workspace_id = 'vm')
+  and exists (select 1 from workspaces where id = 'other'), 'deleting a workspace removes only its rows');
 \echo 'All database tests passed.'
