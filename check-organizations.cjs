@@ -1,0 +1,12 @@
+const vm=require('node:vm'),fs=require('node:fs');let code=fs.readFileSync('dist/app.js','utf8');code=code.slice(0,code.lastIndexOf('if(!localStorage.getItem(KEY))'));let ctx=vm.createContext({console,crypto:require('node:crypto').webcrypto,localStorage:{getItem:()=>null,setItem:()=>{}},document:{addEventListener:()=>{},querySelector:()=>({open:false}),querySelectorAll:()=>[]}});vm.runInContext(code,ctx);vm.runInContext(`render=()=>{};toast=()=>{};
+if(displayOrganizations().length!==1||displayOrganizations()[0].id!=='willow')throw Error('Default must be Jones Team');
+state.assignments=[{id:'a',provider:'p0',dept:'willow',date:'2026-11-01',shift:'day'},{id:'b',provider:'p1',dept:'river',date:'2026-11-01',shift:'night'}];
+let html=calendarCells();if(html.includes('data-assignment="b"'))throw Error('Hidden org assignment shown');
+selectedOrgs=['willow','river'];html=calendarCells();if(!html.includes('data-assignment="a"')||!html.includes('data-assignment="b"')||!html.includes('Jones Team')||!html.includes('Boehm Team'))throw Error('Combined display not labeled');
+if(!stats().includes('2 of 120 covered'))throw Error('Combined coverage wrong');
+selectedOrgs=['river'];html=calendarCells();if(html.includes('data-assignment="a"')||!html.includes('data-assignment="b"'))throw Error('Boehm Team-only incorrect');
+let input={checked:false};toggleOrganization('river',false,input);if(!input.checked||selectedOrgs.length!==1)throw Error('Empty selection allowed');
+let downloadText;download=t=>downloadText=t;exportCSV();if(downloadText.includes('Jones Team')||!downloadText.includes('Boehm Team'))throw Error('Export ignores display filter');
+state.periods['willow:2026-11']={status:'Published'};selectedOrgs=['willow','river'];html=calendarCells();if(!html.includes('aria-label="Edit Emma Wilson Day 2026-11-01 Jones Team" draggable="false"')||!html.includes('aria-label="Edit Sarah Chen Night 2026-11-01 Boehm Team" draggable="true"'))throw Error('Per-organization locks wrong');
+if(!violations({id:'c',provider:'p0',dept:'river',date:'2026-11-01',shift:'day'}).some(e=>e.includes('Overlapping')))throw Error('Hidden organization conflicts ignored');
+console.log('PASS: Jones Team default; single/multiple organization filtering; labeled lanes; aggregate coverage; nonempty selection; scoped exports; independent locks; global conflicts');`,ctx);

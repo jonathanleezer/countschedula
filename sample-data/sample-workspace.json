@@ -1,0 +1,610 @@
+{
+  "providers": [
+    {
+      "id": "p0",
+      "name": "Emma Wilson",
+      "role": "CNM",
+      "target": 10,
+      "max": 14,
+      "nights": true,
+      "affiliations": [
+        "willow",
+        "river"
+      ]
+    },
+    {
+      "id": "p1",
+      "name": "Sarah Chen",
+      "role": "CNM",
+      "target": 10,
+      "max": 14,
+      "nights": true,
+      "affiliations": [
+        "willow",
+        "river"
+      ]
+    },
+    {
+      "id": "p2",
+      "name": "Olivia Brooks",
+      "role": "CNM",
+      "target": 10,
+      "max": 14,
+      "nights": true,
+      "affiliations": [
+        "willow",
+        "river"
+      ]
+    },
+    {
+      "id": "p3",
+      "name": "Rachel Morgan",
+      "role": "CNM",
+      "target": 10,
+      "max": 14,
+      "nights": true,
+      "affiliations": [
+        "willow"
+      ]
+    },
+    {
+      "id": "p4",
+      "name": "Mia Patel",
+      "role": "CNM",
+      "target": 10,
+      "max": 14,
+      "nights": true,
+      "affiliations": [
+        "willow"
+      ]
+    },
+    {
+      "id": "p5",
+      "name": "Hannah Davis",
+      "role": "CNM",
+      "target": 10,
+      "max": 14,
+      "nights": true,
+      "affiliations": [
+        "willow"
+      ]
+    },
+    {
+      "id": "p6",
+      "name": "Claire Bennett",
+      "role": "CNM",
+      "target": 10,
+      "max": 14,
+      "nights": true,
+      "affiliations": [
+        "willow"
+      ]
+    },
+    {
+      "id": "p7",
+      "name": "Ava Thompson",
+      "role": "CNM",
+      "target": 6,
+      "max": 14,
+      "nights": true,
+      "affiliations": [
+        "willow"
+      ]
+    }
+  ],
+  "assignments": [
+    {
+      "date": "2026-11-01",
+      "shift": "day",
+      "id": "4c13a6cb-a846-4a13-b956-5d77975017d7",
+      "provider": "p7",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-01",
+      "shift": "night",
+      "id": "3eb1c19b-79e7-4461-9039-2f9bed61bada",
+      "provider": "p6",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-02",
+      "shift": "day",
+      "id": "99f710f2-0b75-4785-b360-90de9a721969",
+      "provider": "p0",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-02",
+      "shift": "night",
+      "id": "98046a57-c586-4462-87b6-3424470cb7c2",
+      "provider": "p5",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-03",
+      "shift": "day",
+      "id": "5c765777-87fc-4c56-8b75-f9315aafb8ef",
+      "provider": "p4",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-03",
+      "shift": "night",
+      "id": "03132ee6-af16-47a3-8d4b-8ed3831bc1e0",
+      "provider": "p2",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-04",
+      "shift": "day",
+      "id": "c225dbba-a448-44a4-a951-a1e3b0290d4d",
+      "provider": "p3",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-04",
+      "shift": "night",
+      "id": "725e9107-b2ff-4f02-97a0-99543a179b63",
+      "provider": "p1",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-05",
+      "shift": "day",
+      "id": "2e43e70a-d427-4c3e-974a-c9b6c80acc83",
+      "provider": "p6",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-05",
+      "shift": "night",
+      "id": "e34100d2-5ee1-489b-8280-cbf1fe7aac73",
+      "provider": "p0",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-06",
+      "shift": "day",
+      "id": "c5d92729-e4f2-4fa6-bfe2-21324e7fd7a3",
+      "provider": "p5",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-06",
+      "shift": "night",
+      "id": "d2d06e90-f1cb-4399-be4d-227ed13d7f12",
+      "provider": "p4",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-07",
+      "shift": "day",
+      "id": "1531568c-0991-4617-983e-ffb8c2e1f124",
+      "provider": "p2",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-07",
+      "shift": "night",
+      "id": "580824eb-1050-48bc-ac82-519a88aa7d6c",
+      "provider": "p3",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-08",
+      "shift": "day",
+      "id": "56b8b2ec-a4e1-4c39-baf9-a25dcb0bf610",
+      "provider": "p1",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-08",
+      "shift": "night",
+      "id": "692613d0-9913-4197-8a63-5961600e8dca",
+      "provider": "p7",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-09",
+      "shift": "day",
+      "id": "abf5ec77-5727-498a-a999-e2fe855bdf7b",
+      "provider": "p6",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-09",
+      "shift": "night",
+      "id": "66eb75ea-5020-42a9-8658-0bd47e61bc3e",
+      "provider": "p0",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-10",
+      "shift": "day",
+      "id": "4bd3811b-eb5a-42b2-892e-12ba0470201b",
+      "provider": "p5",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-10",
+      "shift": "night",
+      "id": "ea0d5050-3cc8-4ce9-b1e0-40478586b0aa",
+      "provider": "p4",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-11",
+      "shift": "day",
+      "id": "57d25f54-1887-4ce9-a74c-040fac5591db",
+      "provider": "p2",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-11",
+      "shift": "night",
+      "id": "573b0c4f-effc-4ce2-9274-910a02863c5b",
+      "provider": "p3",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-12",
+      "shift": "day",
+      "id": "006c87cd-4c98-4cfd-a08f-c53fe76c9d78",
+      "provider": "p1",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-12",
+      "shift": "night",
+      "id": "7e3d2f32-d49c-497b-8499-5bda65df14ba",
+      "provider": "p6",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-13",
+      "shift": "day",
+      "id": "7c0dd162-fc66-437d-9267-5a153c826dba",
+      "provider": "p0",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-13",
+      "shift": "night",
+      "id": "8e73578d-d771-4d0c-a7d0-4cd9a051652f",
+      "provider": "p5",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-14",
+      "shift": "day",
+      "id": "4e3a590f-206c-4173-a680-86785ba9a7aa",
+      "provider": "p4",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-14",
+      "shift": "night",
+      "id": "1b6a1c29-9115-4dbd-a25a-ecfe4b356715",
+      "provider": "p2",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-15",
+      "shift": "day",
+      "id": "bf641e2b-71fc-4c33-b93c-121f3aa6fd4f",
+      "provider": "p3",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-15",
+      "shift": "night",
+      "id": "04672592-d36c-4985-b3e1-139dba1ee057",
+      "provider": "p1",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-16",
+      "shift": "day",
+      "id": "c2606c99-84f1-4f13-886d-2d6cee967446",
+      "provider": "p7",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-16",
+      "shift": "night",
+      "id": "fa906879-258a-4233-98cd-3e4e295e59b1",
+      "provider": "p6",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-17",
+      "shift": "day",
+      "id": "4da054dc-b879-4a4c-bc3b-f1e0b2820fd8",
+      "provider": "p0",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-17",
+      "shift": "night",
+      "id": "f37081ff-ad02-41ad-b422-9e96a186fa31",
+      "provider": "p5",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-18",
+      "shift": "day",
+      "id": "a6f5ea45-0b57-4cde-bb73-4f7898ee3084",
+      "provider": "p4",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-18",
+      "shift": "night",
+      "id": "c215533f-a739-45cd-bd1b-761d8f4ee475",
+      "provider": "p2",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-19",
+      "shift": "day",
+      "id": "4e3fcb94-1a5f-46d4-9d33-3e5d2ebdc501",
+      "provider": "p3",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-19",
+      "shift": "night",
+      "id": "cca412f7-4d0b-4c69-ab7e-257cc21cb0a9",
+      "provider": "p1",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-20",
+      "shift": "day",
+      "id": "5cedb671-f35b-4afc-aa90-a5f1abe651e1",
+      "provider": "p7",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-20",
+      "shift": "night",
+      "id": "c6023206-d6c8-46cf-bc27-124dc303b6b2",
+      "provider": "p0",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-21",
+      "shift": "day",
+      "id": "c26ed1d1-9e9b-44f3-bfa8-4c84cd418b8e",
+      "provider": "p5",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-21",
+      "shift": "night",
+      "id": "c90d3a36-7802-4768-b4ba-c53c3cba6697",
+      "provider": "p4",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-22",
+      "shift": "day",
+      "id": "9907f545-fd24-452c-b479-f78817255782",
+      "provider": "p6",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-22",
+      "shift": "night",
+      "id": "bf80eb62-b597-4ee2-9580-56f57f2fa7b9",
+      "provider": "p3",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-23",
+      "shift": "day",
+      "id": "235581cc-4871-454f-bbfa-8d034d0c3531",
+      "provider": "p2",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-23",
+      "shift": "night",
+      "id": "14e0d2d1-9be7-4a0c-a65a-7bd1f54c9861",
+      "provider": "p1",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-24",
+      "shift": "day",
+      "id": "e5600e25-d5f3-434b-a754-04be3ecb0b73",
+      "provider": "p6",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-24",
+      "shift": "night",
+      "id": "8642c00d-075f-4df6-b418-16e0a8c45190",
+      "provider": "p7",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-25",
+      "shift": "day",
+      "id": "0cc7cac1-9fa1-42d1-937f-1d4d99dd8c1e",
+      "provider": "p0",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-25",
+      "shift": "night",
+      "id": "da6c87e7-c6c0-4844-b444-7e4c6dc364cc",
+      "provider": "p5",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-26",
+      "shift": "day",
+      "id": "1658223a-09ea-44e1-84b6-2264f06699f2",
+      "provider": "p4",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-26",
+      "shift": "night",
+      "id": "76df6ee6-aa45-4421-94fd-297f45907285",
+      "provider": "p2",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-27",
+      "shift": "day",
+      "id": "903253fb-4180-4292-ba61-d1f542846793",
+      "provider": "p3",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-27",
+      "shift": "night",
+      "id": "126737d7-2a81-4a18-be8a-2be67a5be7ee",
+      "provider": "p1",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-28",
+      "shift": "day",
+      "id": "35c430c4-1b83-4516-a2df-531acedfb770",
+      "provider": "p0",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-28",
+      "shift": "night",
+      "id": "a23257c2-77c5-4a9a-8e23-795f678856c2",
+      "provider": "p6",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-29",
+      "shift": "day",
+      "id": "e3fd1059-a2de-4682-a9d7-2d893f5b30cb",
+      "provider": "p5",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-29",
+      "shift": "night",
+      "id": "085877e9-c802-42ed-b864-3bc39442f336",
+      "provider": "p4",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-30",
+      "shift": "day",
+      "id": "3415a298-f21a-4c05-823d-57ffdb3bc65d",
+      "provider": "p2",
+      "dept": "willow"
+    },
+    {
+      "date": "2026-11-30",
+      "shift": "night",
+      "id": "cf1c4e67-76fe-412e-bfa5-4fbfefacc2ba",
+      "provider": "p3",
+      "dept": "willow"
+    }
+  ],
+  "requests": [
+    {
+      "id": "r1",
+      "provider": "p2",
+      "start": "2026-11-12",
+      "end": "2026-11-14",
+      "status": "Pending",
+      "reason": "Family trip"
+    },
+    {
+      "id": "r2",
+      "provider": "p4",
+      "start": "2026-11-23",
+      "end": "2026-11-25",
+      "status": "Approved",
+      "reason": "Personal time"
+    }
+  ],
+  "rules": {
+    "rest": 12,
+    "consecutive": 3,
+    "dayCoverage": 1,
+    "nightCoverage": 1
+  },
+  "periods": {},
+  "audit": [
+    {
+      "text": "Generated 60 assignments · Jones Team · Labor & Delivery · 2026-11",
+      "time": "2026-11-04T20:16:56.282Z"
+    }
+  ],
+  "shiftTypes": [
+    {
+      "id": "day",
+      "name": "Day",
+      "start": "07:00",
+      "end": "19:00",
+      "color": "#6b9b69",
+      "coverage": 1,
+      "night": false,
+      "active": true
+    },
+    {
+      "id": "night",
+      "name": "Night",
+      "start": "19:00",
+      "end": "07:00",
+      "color": "#8a79b2",
+      "coverage": 1,
+      "night": true,
+      "active": true
+    },
+    {
+      "id": "clinic-am",
+      "name": "Clinic AM",
+      "start": "08:00",
+      "end": "12:00",
+      "color": "#5c9db0",
+      "coverage": 0,
+      "night": false,
+      "active": true
+    },
+    {
+      "id": "clinic-pm",
+      "name": "Clinic PM",
+      "start": "13:00",
+      "end": "17:00",
+      "color": "#b28e56",
+      "coverage": 0,
+      "night": false,
+      "active": true
+    },
+    {
+      "id": "triage",
+      "name": "Triage",
+      "start": "09:00",
+      "end": "21:00",
+      "color": "#b47783",
+      "coverage": 0,
+      "night": false,
+      "active": true
+    },
+    {
+      "id": "flex",
+      "name": "Flex",
+      "start": "11:00",
+      "end": "19:00",
+      "color": "#728caf",
+      "coverage": 0,
+      "night": false,
+      "active": true
+    }
+  ]
+}

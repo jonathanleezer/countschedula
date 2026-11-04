@@ -1,0 +1,26 @@
+# Acceptance checklist
+
+## Baseline automated
+
+Run `npm test`. Expected: syntax checks and all three original domain regression scripts pass. They cover initial 60-slot generation, no configured conflicts, global overlap/rest/PTO, affiliation/monthly limits, six types/duration/overnight rollover, legacy migration, custom generation/coverage, organization filters, labels, aggregate coverage, selected export, nonempty organization selection, and independent locks.
+
+These checks do not certify complete clinical correctness.
+
+## Browser smoke checks
+
+1. `npm start`; load http://localhost:3000. Confirm CountSchedula / Vanderbilt Midwives and Jones Team selected.
+2. Display organizations: Jones only, both, Boehm only; prevent zero selected. Confirm labels/colored lanes and shared-provider assignments are clear.
+3. Change display without generating/publishing. Confirm no assignment changes occur.
+4. Open a Boehm slot while the action target remains Jones. Confirm editor defaults to Boehm, shows only affiliated providers, and saves to Boehm.
+5. Drag an assignment to another date and another organization's slot. Check affiliation, rest, overlap, PTO, and published-state enforcement. Invalid moves must explain why and leave state unchanged.
+6. Add/edit a type; set custom duration/overnight times/color/coverage. Confirm calendar, missing slots, generator, CSV, and hours update.
+7. Submit PTO overlapping an assignment; approval blocks. Resolve assignment, approve, then verify generation avoids it.
+8. Fill target schedule, publish, verify its lock independently of the other organization's schedule, then reopen.
+9. Export CSV for selected organizations. Inspect org, department, provider, date, shift, times, and next-day end date.
+10. Backup, restore in another clean browser origin, and compare provider IDs, assignments, shift types, PTO, and period status.
+11. Mobile sidebar closes on navigation, close button, outside click, Escape. Tab/Enter can open assignment editor. Test real touch separately.
+12. Reload: saved workspace remains. Session-only filters/undo reset as documented.
+
+## Before shared backend release
+
+Add tenant-isolation, permission, concurrency, publication/version, transaction, migration, import/schema, solver, DST, accessibility, and browser integration tests. Confirm no real provider information is sent to external services without explicit configuration and authorization.

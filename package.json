@@ -1,0 +1,14 @@
+{
+  "name": "countschedula",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Vanderbilt Midwives scheduling pilot \u2014 portable Claude Code handoff",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node scripts/serve.cjs",
+    "dev": "node scripts/serve.cjs",
+    "test": "node scripts/test.cjs"
+  }
+}
