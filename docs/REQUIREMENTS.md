@@ -54,6 +54,7 @@ Confirmed by the user:
 - Rotations are the default Schedule view and the center of publishing and reports; Month and Week views remain.
 - Shift types are assigned to days of the week per rotation (team default pattern at rotation creation), with
   optional date-specific shift assignments inside the rotation.
+- Weeks start on the weekday of each rotation's start date (a Monday rotation runs Mon–Sun), rotation by rotation.
 - Holidays are defined per team (each team keeps its own holiday calendar and staffing), with optional
   one-off holidays on a single rotation.
 

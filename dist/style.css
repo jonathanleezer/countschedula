@@ -45,3 +45,4 @@ fieldset.plain{border:0;padding:0;margin:0;min-width:0}
 .pattern-grid table td,.pattern-grid table th{padding:5px 4px}
 .pattern-grid button{font-size:9px;padding:3px 5px;margin-left:2px}
 .pattern-grid input[type=number]{width:48px}
+.wk-label{font-size:9px;font-weight:600;color:var(--muted);margin-left:4px;white-space:nowrap}

@@ -130,4 +130,20 @@ must(coverageMissing().length===0&&validateAll().length===0,'Pattern rotation ge
 let r2a=relevant();must(r2a.filter(a=>a.shift==='clinic-am').every(a=>[1,2,3,4,5].includes(date(a.date).getDay()))&&r2a.some(a=>a.shift==='clinic-am'),'Clinic AM generated on weekdays only');
 must(r2a.filter(a=>a.date==='2027-01-15'&&a.shift==='day').length===0&&r2a.filter(a=>a.date==='2027-01-15'&&a.shift==='triage').length===2,'Date-specific shifts generated');
 let html2=rotationsPage()+calendarCells();must(html2.includes('Mon–Fri')&&!html2.includes('undefined')&&!html2.includes('NaN'),'Pattern summary rendered');
-console.log('PASS: weekly shift patterns per rotation (team default, weekday selection, date-specific shifts, precedence, validation, generation); rotation-first views (month/week target the covering rotation, no month fallback, no coverage outside rotations, rotation/month/week reports, request rotations, CSV rotation, rotation-first sample); team holiday calendars (rules, per-team, copy, sync, frozen when published), per-rotation limits migration, durations, per-team rotations from defaults, standard holidays, validation, holiday coverage overrides, year-over-year holiday rotation, rotation generation/max/publish/locks, rendering, CSV');`,ctx);
+// weeks start on the rotation's start weekday
+state.rotations=state.rotations.filter(r=>r.dept!=='river');state.rotationDefaults.river={start:'2026-11-02',length:8,unit:'weeks'};dept='river';addRotations(2);
+let mr=rotationsOf('river');must(mr[0].start==='2026-11-02'&&date(mr[0].start).getDay()===1,'Monday rotation');
+const firstDow=h=>h.split('<div class="dow">')[1].split('<')[0],firstDate=h=>h.split('data-date="')[1].slice(0,10);
+rotationSel.river=mr[0].id;mode='Rotation';let wk=calendarCells();
+must(firstDow(wk)==='Mon','Rotation weeks start on Monday');
+must(wk.split('class="day ').length-1===56&&firstDate(wk)==='2026-11-02'&&!wk.includes('class="day out'),'Eight whole Mon–Sun weeks, first cell is the start date');
+must(wk.includes('Week 1')&&wk.includes('Week 8')&&!wk.includes('Week 9'),'Week numbers within the rotation');
+mode='Week';cursor=date('2026-11-12');must(visibleRange().start==='2026-11-09'&&visibleRange().end==='2026-11-15'&&firstDow(calendarCells())==='Mon','Week view runs Mon–Sun');
+mode='Month';cursor=new Date(2026,10,1);must(firstDow(calendarCells())==='Mon','Month columns follow the rotation weekday');
+let wr={...nextRotation('river'),start:plus(mr[1].end,3)};wr.end=addDuration(wr.start,8,'weeks');state.rotations.push(wr);validateRotations(state.rotations);
+rotationSel.river=wr.id;mode='Rotation';cursor=date(wr.start);wk=calendarCells();
+must(date(wr.start).getDay()===3&&firstDow(wk)==='Wed'&&firstDate(wk)===wr.start,'A Wednesday rotation runs Wed–Tue');
+mode='Week';cursor=date(plus(wr.start,9));must(date(visibleRange().start).getDay()===3,'Week view inside a Wednesday rotation starts Wednesday');
+let grid=patternGrid({},'x',1);must(grid.indexOf('<th>Mon</th>')<grid.indexOf('<th>Sun</th>'),'Weekly shifts grid follows the rotation week order');
+must(firstDow((dept='willow',mode='Rotation',rotationSel.willow=rotationsOf('willow')[0].id,calendarCells()))==='Sun','Each rotation uses its own start weekday (Jones starts Sunday)');
+console.log('PASS: weeks start on each rotation’s start weekday (rotation/week/month views, week numbers, grid order); weekly shift patterns per rotation (team default, weekday selection, date-specific shifts, precedence, validation, generation); rotation-first views (month/week target the covering rotation, no month fallback, no coverage outside rotations, rotation/month/week reports, request rotations, CSV rotation, rotation-first sample); team holiday calendars (rules, per-team, copy, sync, frozen when published), per-rotation limits migration, durations, per-team rotations from defaults, standard holidays, validation, holiday coverage overrides, year-over-year holiday rotation, rotation generation/max/publish/locks, rendering, CSV');`,ctx);

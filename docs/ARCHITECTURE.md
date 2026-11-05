@@ -124,6 +124,10 @@ night, client and server may disagree about an interval by up to an hour; the se
   date-specific shift > holiday staffing > weekly pattern > shift type daily default (rotations without a pattern).
   Server: `rotations.pattern/date_shifts`, `cs_required()` with the same precedence, frozen on published rotations
   (migration `20261105000007_rotation_shift_patterns.sql`).
+- **Week start** (2026-11-05): weeks begin on the weekday a rotation starts (`weekStartDay()`): Rotation view
+  shows whole weeks from the start date with "Week N" labels; Week view and Month view columns follow the
+  rotation covering the cursor (the target team's); the weekly-shifts grid uses the same order. Teams without
+  rotations use Sunday. Display only: patterns store absolute weekdays, so the server is unaffected.
 - **Locks:** `isPublished(dept, day)` is true inside a published rotation of that team or a published
   legacy month. Legacy month publications remain valid.
 - **Coverage:** `required(dept, day, type)` returns a holiday's override for that type, else the type's daily

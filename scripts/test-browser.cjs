@@ -209,6 +209,17 @@ ok('Date-specific shift adds 2 Triage on Jan 15',await rp.locator('.org-lane[dat
 await rp.evaluate(()=>navigate('Rotations'));await rp.click('form[onsubmit^="saveRotationDefaults"] .pattern-grid tr[data-type="clinic-pm"] button[title="Mon–Fri"]');await rp.click('form[onsubmit^="saveRotationDefaults"] button.primary');await rp.waitForTimeout(150);
 await rp.click('button:has-text("+ Add next rotation")');await rp.waitForTimeout(150);
 ok('New rotation starts from the team default weekly pattern',await rp.evaluate(()=>{let l=rotationsOf('willow'),r=l[l.length-1];return r.pattern&&r.pattern['clinic-pm']?.days.join()==='1,2,3,4,5'}));
+// weeks follow the rotation start weekday: a Monday rotation for Boehm Team
+await rp.evaluate(()=>{dept='river';navigate('Rotations')});await rp.fill('form[onsubmit^="saveRotationDefaults"] input[name=start]','2026-11-02');await rp.click('form[onsubmit^="saveRotationDefaults"] button.primary');await rp.waitForTimeout(150);
+await rp.click('button:has-text("+ Add next rotation")');await rp.waitForTimeout(150);
+await rp.click('#rotation-table tbody tr:first-child button:has-text("Edit")');await rp.waitForSelector('#modal[open] .pattern-grid');
+ok('Weekly shifts grid starts on Monday for a Monday rotation',(await rp.locator('#modal .pattern-grid thead th').nth(1).textContent())==='Mon');
+await rp.click('#modal .pattern-grid tr[data-type="clinic-am"] button[title="Mon–Fri"]');await rp.click('#modal button.primary');await rp.waitForTimeout(150);
+ok('M–F still selects Monday–Friday in the reordered grid',await rp.evaluate(()=>rotationsOf('river')[0].pattern['clinic-am'].days.join()==='1,2,3,4,5'));
+await rp.click('#rotation-table tbody tr:first-child button:has-text("Open")');await rp.waitForSelector('.calendar');
+ok('Rotation view runs Mon–Sun from the start date',(await rp.locator('.calendar .dow').first().textContent())==='Mon'&&(await rp.locator('.calendar .day').first().getAttribute('data-date'))==='2026-11-02'&&(await rp.textContent('.calhead')).includes('weeks start Mon'));
+await rp.click('.segmented button:has-text("Week")');ok('Week view inside it also starts Monday',(await rp.locator('.calendar .dow').first().textContent())==='Mon'&&await rp.evaluate(()=>date(visibleRange().start).getDay()===1));
+await rp.click('.segmented button:has-text("Rotation")');await rp.evaluate(()=>{dept='willow'});
 // mobile: rotations page fits
 const rm=await (await b.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true})).newPage();await rm.goto(URL);await rm.waitForSelector('.calendar');
 await rm.evaluate(()=>{state.rotationDefaults={willow:{start:'2026-11-01',length:8,unit:'weeks'}};addStandardTeamHolidays();addRotations(2);navigate('Rotations')});await rm.waitForTimeout(200);

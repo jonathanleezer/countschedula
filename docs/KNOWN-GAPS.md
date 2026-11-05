@@ -78,6 +78,9 @@ had no independent security review.
   in a draft rotation to apply it there.
 - A weekly pattern has one provider count per shift type for all its days (e.g. not 2 on Mondays and 1 on Fridays);
   use date-specific shifts for exceptions.
+- When both teams are shown and their rotations start on different weekdays, the calendar uses the editing
+  target team's week start.
+- The consecutive-workdays rule counts calendar days and is not tied to rotation weeks.
 - Standard US holidays offered: New Year's Day, Memorial Day, Independence Day, Labor Day, Thanksgiving,
   Christmas Eve, Christmas Day, New Year's Eve. Edit per rotation as needed.
 - Teams with rotations have no coverage requirement (and no open shifts) outside their rotations; this is a client
