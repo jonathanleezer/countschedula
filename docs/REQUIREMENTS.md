@@ -51,6 +51,8 @@ Confirmed by the user:
 - Provider targets and maximums are counted per rotation (converted once from monthly ×2).
 - Holidays: mark holiday dates, holiday-specific coverage per shift type, fair sharing, and holiday
   coverage rotated from provider to provider year to year.
+- Holidays are defined per team (each team keeps its own holiday calendar and staffing), with optional
+  one-off holidays on a single rotation.
 
 Implemented as described in `docs/ARCHITECTURE.md` (Rotations and holidays).
 

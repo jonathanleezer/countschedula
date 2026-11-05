@@ -221,6 +221,19 @@ select t_save(jsonb_set(t_st(), '{holidayHistory}', '[{"id":"hh1","provider":"p3
 select t_assert(t_st()->'holidayHistory'->0->>'holiday' = 'Christmas Day', 'holiday history round-trip');
 select expect_fail($$select t_save(jsonb_set(t_st(), '{holidayHistory}', '[{"id":"hh2","provider":"p3","holiday":"X","year":1800}]'))$$, 'PT422', 'Invalid workspace data');
 select expect_fail($$select t_save(jsonb_set(t_st(), '{holidayHistory}', '[{"id":"hh3","provider":"nobody","holiday":"X","year":2025}]'))$$, 'PT422', 'does not exist');
+-- per-team holiday calendars
+select t_save(jsonb_set(t_st(), '{teamHolidays}', '[{"id":"th-xmas","dept":"willow","name":"Christmas Day","kind":"fixed","month":12,"day":25,"coverage":{"day":2}},
+  {"id":"th-tg","dept":"willow","name":"Thanksgiving Day","kind":"nth","month":11,"weekday":4,"nth":4,"coverage":{}},
+  {"id":"th-b","dept":"river","name":"Founders Day","kind":"once","date":"2026-11-23","coverage":{}}]'));
+select t_assert(jsonb_array_length(t_st()->'teamHolidays') = 3 and (select count(*) from team_holidays where dept_id = 'river') = 1
+  and t_st()->'teamHolidays'->0->'coverage'->>'day' = '2' and not (t_st()->'teamHolidays'->2 ? 'month'), 'team holidays round-trip per team');
+select t_save(jsonb_set(t_st(), '{rotations,1,holidays}', '[{"id":"hb1","name":"Founders Day","date":"2026-11-23","coverage":{},"team":"th-b"}]'));
+select t_assert(t_st()->'rotations'->1->'holidays'->0->>'team' = 'th-b' and not (t_st()->'rotations'->0->'holidays'->0 ? 'team'), 'rotation holidays keep their team link');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{teamHolidays}', (t_st()->'teamHolidays') || '[{"id":"th-dup","dept":"willow","name":"christmas day","kind":"fixed","month":12,"day":24,"coverage":{}}]'))$$, 'PT422', 'Invalid workspace data');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{teamHolidays}', '[{"id":"th-x","dept":"willow","name":"X","kind":"weekly","coverage":{}}]'))$$, 'PT422', 'Invalid team holiday');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{teamHolidays}', '[{"id":"th-y","dept":"willow","name":"Y","kind":"nth","month":11,"coverage":{}}]'))$$, 'PT422', 'Invalid workspace data');
+select t_save(t_st() - 'teamHolidays');
+select t_assert(jsonb_array_length(t_st()->'teamHolidays') = 3, 'payload without teamHolidays keeps them');
 -- import keeps a published rotation and records its publication
 select t_login(:admin);
 select t_save(jsonb_set(jsonb_set(t_st(), '{rotations,1,status}', '"Published"'), '{rotations,1,snapshot}', '[]'), 'import');

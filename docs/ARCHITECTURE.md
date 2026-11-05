@@ -114,6 +114,13 @@ night, client and server may disagree about an interval by up to an hour; the se
 - **Workload:** inside a rotation of the assignment's team, `rotationMax` counts the provider's shifts on all
   teams during that rotation's dates; outside rotations the monthly `max` applies. `migrate()` set
   `rotationTarget/rotationMax` to 2× the monthly values once.
+- **Team holiday calendars** (added 2026-11-05): `state.teamHolidays` = `{id, dept, name, kind, …, coverage}` with
+  `kind` `fixed` (month/day every year), `nth` (1st–5th or last weekday of a month) or `once` (date).
+  `syncTeamHolidays()` copies each team's holidays into that team's **draft** rotations (holiday entries carry
+  `team: <definition id>`), on adding rotations, changing a rotation's dates, and editing the team list.
+  Rotation-only (one-off) holidays have no `team` and win if they share a date. Published rotations keep the
+  holidays they were published with. Server: `team_holidays` table and `rotation_holidays.team_holiday_id`
+  (migration `20261105000006_team_holidays.sql`); the date rules are applied in the client.
 - **Holiday fairness:** holiday gaps are generated first. Candidates are penalised for holiday shifts already
   in this period, for how often they covered the same holiday (matched by name, case-insensitive) in
   earlier years, and most strongly for covering it recently. History = CountSchedula assignments on that

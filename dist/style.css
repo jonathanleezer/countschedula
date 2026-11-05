@@ -33,3 +33,5 @@ fieldset.plain{border:0;padding:0;margin:0;min-width:0}
 .holiday-cov input{width:64px}
 .manage-target select+select{margin-left:8px}
 @media(max-width:850px){.manage-target select+select{margin:8px 0 0}}
+.holiday-team{border:1px solid #f1dfc2;background:#fffaf2;border-radius:8px;padding:8px 12px;margin:6px 0;font-size:12px}
+.th-kind[hidden]{display:none!important}

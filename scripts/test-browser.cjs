@@ -131,28 +131,40 @@ await rp.click('#nav button:has-text("Rotations")');await rp.waitForSelector('fo
 await rp.fill('form[onsubmit^="saveRotationDefaults"] input[name=start]','2026-11-01');await rp.fill('form[onsubmit^="saveRotationDefaults"] input[name=length]','8');
 await rp.click('form[onsubmit^="saveRotationDefaults"] button.primary');await rp.waitForTimeout(150);
 ok('Rotation defaults saved (8 weeks)',await rp.evaluate(()=>state.rotationDefaults.willow.length===8&&state.rotationDefaults.willow.unit==='weeks'));
+await rp.click('button:has-text("+ Add standard US holidays")');await rp.waitForTimeout(150);
+ok('Standard holidays added to the Jones Team calendar',await rp.evaluate(()=>teamHolidays('willow').length===8&&teamHolidays('river').length===0));
+// Christmas needs 2 day providers and no night, for Jones Team
+await rp.click('.panel:has(h3:has-text("Holidays · Jones Team")) tr:has-text("Christmas Day") button:has-text("Edit")');await rp.waitForSelector('#modal[open] input[name="th-cov-day"]');
+await rp.fill('#modal input[name="th-cov-day"]','2');await rp.fill('#modal input[name="th-cov-night"]','0');await rp.screenshot({path:out+'/r2-team-holiday.png'});await rp.click('#modal button.primary');await rp.waitForTimeout(150);
+// a team-specific holiday with a weekday rule
+await rp.click('button:has-text("+ Add holiday")');ok('Holiday dialog shows only the fields for the chosen repeat type',!(await rp.isVisible('#modal select[name="n-weekday"]'))&&await rp.isVisible('#modal input[name="f-day"]'));await rp.fill('#modal input[name=name]','Unit Founders Day');await rp.selectOption('#modal select[name=kind]','nth');
+await rp.selectOption('#modal select[name="n-nth"]','2');await rp.selectOption('#modal select[name="n-weekday"]','1');await rp.selectOption('#modal select[name="n-month"]','11');await rp.click('#modal button.primary');await rp.waitForTimeout(150);
+ok('Weekday-rule team holiday saved (2nd Monday of November)',(await rp.textContent('.panel:has(h3:has-text("Holidays · Jones Team"))')).includes('2nd Monday of November'));
 await rp.fill('#rot-count','6');await rp.click('button:has-text("Add rotations")');await rp.waitForTimeout(200);
 ok('Six consecutive 8-week rotations added',await rp.evaluate(()=>{let r=rotationsOf('willow');return r.length===6&&r[0].end==='2026-12-26'&&r[5].end==='2027-10-02'}));
-ok('Standard holidays added to rotations',(await rp.textContent('table')).includes('Thanksgiving Day'));
+ok('Team holidays appear in new rotations',await rp.evaluate(()=>{let r=rotationsOf('willow')[0];return r.holidays.some(h=>h.name==='Thanksgiving Day')&&r.holidays.some(h=>h.name==='Unit Founders Day'&&h.date==='2026-11-09')}));
+await rp.selectOption('.toolbar select[aria-label="Department"]','river');await rp.waitForTimeout(150);
+ok('Boehm Team keeps its own (empty) holiday calendar',(await rp.textContent('#main')).includes('No holidays for Boehm Team yet')&&await rp.evaluate(()=>rotationsOf('river').length===0));
+await rp.selectOption('.toolbar select[aria-label="Department"]','willow');await rp.waitForTimeout(150);
 await rp.screenshot({path:out+'/r1-rotations.png',fullPage:true});
-// edit first rotation: Christmas needs 2 day providers and no night
-await rp.click('tbody tr:first-child button:has-text("Edit")');await rp.waitForSelector('#modal[open] #holiday-rows');
-const xmasRow=rp.locator('#holiday-rows .holiday-row',{has:rp.locator('input[name=h-date][value="2026-12-25"]')});
-await xmasRow.locator('input[name=h-cov-day]').fill('2');await xmasRow.locator('input[name=h-cov-night]').fill('0');
-await rp.screenshot({path:out+'/r2-rotation-dialog.png'});
-await rp.click('#modal button.primary');await rp.waitForTimeout(150);
+// rotation dialog: team holidays read-only, one-off holiday editable
+await rp.click('#rotation-table tbody tr:first-child button:has-text("Edit")');await rp.waitForSelector('#modal[open] form[onsubmit^="saveRotation"]');
+ok('Rotation dialog lists team holidays',await rp.locator('#modal .holiday-team').count()===4,String(await rp.locator('#modal .holiday-team').count()));
+await rp.click('#modal button:has-text("+ Add one-off holiday")');await rp.fill('#holiday-rows .holiday-row:last-child input[name=h-name]','Unit retreat');await rp.fill('#holiday-rows .holiday-row:last-child input[name=h-date]','2026-12-10');
+await rp.fill('#holiday-rows .holiday-row:last-child input[name="h-cov-day"]','0');await rp.screenshot({path:out+'/r2b-rotation-dialog.png'});await rp.click('#modal button.primary');await rp.waitForTimeout(150);
+ok('One-off rotation holiday saved alongside team holidays',await rp.evaluate(()=>{let h=rotationsOf('willow')[0].holidays;return h.some(x=>x.name==='Unit retreat'&&!x.team)&&h.filter(x=>x.team).length===4}));
 ok('Holiday coverage override saved',await rp.evaluate(()=>required('willow','2026-12-25',shiftType('day'))===2&&required('willow','2026-12-25',shiftType('night'))===0));
 // invalid: overlapping dates refused in the dialog
-await rp.click('tbody tr:nth-child(2) button:has-text("Edit")');await rp.waitForSelector('#modal[open]');await rp.fill('#modal input[name=start]','2026-12-20');await rp.click('#modal button.primary');await rp.waitForTimeout(150);
+await rp.click('#rotation-table tbody tr:nth-child(2) button:has-text("Edit")');await rp.waitForSelector('#modal[open]');await rp.fill('#modal input[name=start]','2026-12-20');await rp.click('#modal button.primary');await rp.waitForTimeout(150);
 ok('Overlapping rotation dates are refused with a reason',/overlap/.test(await rp.textContent('#formerror')),await rp.textContent('#formerror'));
 await rp.click('#modal button:has-text("Cancel")');
 // open in schedule: Rotation view, 8 weeks, holiday tags, open slots incl. override
-await rp.click('tbody tr:first-child button:has-text("Open")');await rp.waitForSelector('.calendar');
+await rp.click('#rotation-table tbody tr:first-child button:has-text("Open")');await rp.waitForSelector('.calendar');
 ok('Schedule opens in Rotation view for that rotation',await rp.evaluate(()=>mode==='Rotation'&&period().rotation.name==='2026 Rotation 1'));
 ok('Rotation view shows 8 weeks of days',await rp.locator('.calendar .day:not(.out)').count()===56,String(await rp.locator('.calendar .day:not(.out)').count()));
 ok('Holiday tags shown on the calendar',await rp.locator('.org-lane[data-dept="willow"][data-date="2026-11-26"] .holiday-tag').count()===1);
-ok('Holiday override shapes open slots (2 Day, 0 Night on Christmas)',await rp.locator('.org-lane[data-dept="willow"][data-date="2026-12-25"] .assignment.open').count()===2);
-ok('Coverage stat covers the rotation (112 required)',(await rp.textContent('.stats')).includes('of 112 covered'));
+ok('Team holiday staffing shapes open slots (2 Day, 0 Night on Christmas)',await rp.locator('.org-lane[data-dept="willow"][data-date="2026-12-25"] .assignment.open').count()===2);
+ok('Coverage stat covers the rotation (111 required: Christmas 2+0, retreat 0 Day)',(await rp.textContent('.stats')).includes('of 111 covered'),await rp.textContent('.stats .stat small'));
 await rp.click('button:has-text("Generate")');await rp.click('#modal button.primary:has-text("Generate draft")');await rp.waitForTimeout(300);
 ok('Generate fills the rotation without conflicts',await rp.evaluate(()=>coverageMissing().length===0&&validateAll().length===0&&state.assignments.every(a=>a.date<='2026-12-26')));
 await rp.screenshot({path:out+'/r3-rotation-schedule.png'});
@@ -167,10 +179,10 @@ ok('Reports show holiday coverage and fairness',(await rp.textContent('#main')).
 await rp.evaluate(()=>navigate('Providers'));ok('Providers show rotation target/max',(await rp.textContent('table')).includes('20 / 28'));
 // mobile: rotations page fits
 const rm=await (await b.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true})).newPage();await rm.goto(URL);await rm.waitForSelector('.calendar');
-await rm.evaluate(()=>{state.rotationDefaults={willow:{start:'2026-11-01',length:8,unit:'weeks'}};addRotations(2,true);navigate('Rotations')});await rm.waitForTimeout(200);
+await rm.evaluate(()=>{state.rotationDefaults={willow:{start:'2026-11-01',length:8,unit:'weeks'}};addStandardTeamHolidays();addRotations(2);navigate('Rotations')});await rm.waitForTimeout(200);
 ok('Rotations page has no horizontal page overflow on a phone',await rm.evaluate(()=>document.documentElement.scrollWidth<=390),String(await rm.evaluate(()=>document.documentElement.scrollWidth)));
 await rm.screenshot({path:out+'/r4-rotations-mobile.png',fullPage:true});
 ok('No JS errors (rotations)',rerr.length===0,rerr.join(' | '));
 await b.close();
 finish(0);
-})().catch(e=>{console.error(e);finish(1)});
+})().catch(e=>{console.error(e);results.push(['FAIL','Test run aborted',e.message.split('\n')[0]]);finish(1)});

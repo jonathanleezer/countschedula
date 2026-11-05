@@ -70,6 +70,10 @@ had no independent security review.
   someone the same holiday two years running (the Reports page flags it with ⚠).
 - Holiday history only counts holidays that were defined in a rotation (or recorded in "Holiday coverage
   before CountSchedula"). Assignments made before rotations were set up do not count.
+- Team holiday rules cover fixed dates, nth/last weekday of a month, and single dates. Movable feasts (e.g.
+  Easter) and "observed" weekday shifts (Jul 4 on a Saturday observed Friday) need a single-date entry per year.
+- The server stores team holidays but does not re-derive rotation holiday dates from the rules; the client keeps
+  draft rotations in step.
 - Standard US holidays offered: New Year's Day, Memorial Day, Independence Day, Labor Day, Thanksgiving,
   Christmas Eve, Christmas Day, New Year's Eve. Edit per rotation as needed.
 - Days outside every rotation still use calendar-month periods and monthly limits.
