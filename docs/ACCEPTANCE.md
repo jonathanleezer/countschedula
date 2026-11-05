@@ -35,6 +35,9 @@ These checks do not certify complete clinical correctness.
 - Live check (2026-11-05, QA workspace, since deleted): defaults and rotations saved, holiday override saved and
   honored by generation, server-confirmed full coverage with no conflicts, rotation publish with snapshot and
   history, server refusal of edits inside / re-dating of a published rotation and of overlapping rotations.
+- Live check (2026-11-05, QA workspace, since deleted): per-team holiday calendars saved on the server, each team's
+  rotations carry only its own linked holidays, team staffing shapes the calendar, deleting a team holiday updates
+  drafts while the published rotation keeps its holidays, reload persists.
 
 ## Before wider release
 
