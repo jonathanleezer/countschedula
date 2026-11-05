@@ -105,6 +105,7 @@
   window.CountSchedulaCloud={
     active:true,
     note(text){notes.push(String(text).slice(0,500))},
+    async publicationHistory(department,rotationId){const {data,error}=await sb.rpc('list_publications',{p_ws:ws,p_dept:department,p_month:rotationId});return error?null:data},
     roleLabel(){return (roleNames[role]||role||'')+(user?' · '+user.email:'')},
     save(){
       if(!booted)return;

@@ -76,7 +76,12 @@ had no independent security review.
   draft rotations in step.
 - Standard US holidays offered: New Year's Day, Memorial Day, Independence Day, Labor Day, Thanksgiving,
   Christmas Eve, Christmas Day, New Year's Eve. Edit per rotation as needed.
-- Days outside every rotation still use calendar-month periods and monthly limits.
+- Teams with rotations have no coverage requirement (and no open shifts) outside their rotations; this is a client
+  rule. The server's month-publication check still uses daily coverage, but month publishing is no longer offered
+  to teams with rotations.
+- Teams without any rotations still use calendar-month periods and monthly limits. Old published months stay locked.
+- Publication history in the published-version view lists dates, who published, and assignment counts; only the
+  latest published snapshot can be opened or downloaded.
 
 ## UI and reporting
 

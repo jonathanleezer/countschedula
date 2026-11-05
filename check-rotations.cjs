@@ -90,4 +90,22 @@ let html=calendarCells()+schedule()+rotationsPage()+reportsPage();
 must(!html.includes('undefined')&&!html.includes('NaN'),'Rendering invalid values');
 must(html.includes('✦ Christmas Day')&&html.includes('2026 Rotation 1'),'Holiday and rotation labels rendered');
 let out;download=t=>out=t;view='Schedule';selectedOrgs=['willow'];exportCSV();must(out.split('\\n')[0].includes('Holiday')&&out.includes('Christmas Day'),'CSV holiday column');
-console.log('PASS: team holiday calendars (rules, per-team, copy, sync, frozen when published), per-rotation limits migration, durations, per-team rotations from defaults, standard holidays, validation, holiday coverage overrides, year-over-year holiday rotation, rotation generation/max/publish/locks, rendering, CSV');`,ctx);
+// rotation-first behavior
+mode='Month';cursor=new Date(2026,11,1);delete rotationSel.willow;
+must(period().rotation.id===rs[0].id,'Month view targets the rotation covering the viewed dates (mid-December → rotation 1)');
+changePeriod(1);must(period().rotation.id===rs[1].id&&period().kind==='rotation','Moving months moves the target rotation');
+must(!rotationSelect().includes('Calendar month'),'Teams with rotations have no month fallback option');
+must(required('willow','2027-12-01',shiftType('day'))===0&&required('willow','2026-11-10',shiftType('day'))===1,'No required coverage outside rotations for a team that uses rotations');
+must(required('river','2027-12-01',shiftType('day'))===1,'Teams without rotations keep daily coverage');
+setMode('Rotation');must(mode==='Rotation'&&period().rotation.id===rs[1].id&&iso(cursor)===rs[1].start,'Switching to Rotation keeps the target rotation');
+view='Reports';let rep=reportsPage();must(rep.includes('Rotation by rotation')&&rep.includes(rs[1].name)&&!rep.includes('undefined')&&!rep.includes('NaN'),'Rotation reports with rotation history');
+setMode('Month');rep=reportsPage();must(rep.includes('Monthly workload')&&!rep.includes('Rotation by rotation'),'Monthly report scope still available');
+setMode('Week');rep=reportsPage();must(rep.includes('Weekly workload'),'Weekly report scope still available');
+setMode('Rotation');view='Schedule';
+state.requests.push({id:'rq',provider:'p0',start:'2026-12-20',end:'2026-12-30',status:'Pending'});must(requestRotations(state.requests.at(-1)).includes(rs[0].name)&&requestRotations(state.requests.at(-1)).includes(rs[1].name),'Requests show the rotations they touch');state.requests.pop();
+rotationSel.willow=rs[0].id;download=t=>out=t;exportCSV();must(out.split('\\r\\n')[0].includes('Rotation')&&out.includes(rs[0].name),'CSV includes the rotation');
+// local sample starts rotation-first
+state=migrate(seed());rotationSel={};mode='Rotation';cursor=new Date(2026,10,1);seedRotations();
+must(rotationsOf('willow').length===6&&rotationsOf('river').length===6&&teamHolidays('river').length===8&&rotationsOf('river')[0].holidays.some(h=>h.name==='Thanksgiving Day'),'Sample has rotations and holidays for both teams');
+generate(true);must(relevant().length===112-1+1&&coverageMissing().length===0&&validateAll().length===0,'Sample generation fills the first Jones rotation: '+relevant().length+' / '+coverageMissing().length+' open');
+console.log('PASS: rotation-first views (month/week target the covering rotation, no month fallback, no coverage outside rotations, rotation/month/week reports, request rotations, CSV rotation, rotation-first sample); team holiday calendars (rules, per-team, copy, sync, frozen when published), per-rotation limits migration, durations, per-team rotations from defaults, standard holidays, validation, holiday coverage overrides, year-over-year holiday rotation, rotation generation/max/publish/locks, rendering, CSV');`,ctx);

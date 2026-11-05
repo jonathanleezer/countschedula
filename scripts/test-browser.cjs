@@ -19,7 +19,7 @@ ok('Brand + workspace',(await p.textContent('.brand')).includes('CountSchedula')
 ok('Jones Team default selected',await p.evaluate(()=>JSON.stringify(selectedOrgs)==='["willow"]'));
 ok('No Willow/Riverside in UI',!/Willow|Riverside/.test(await p.textContent('body')));
 const n0=await p.evaluate(()=>state.assignments.length);
-ok('Initial generation 60 Jones assignments, all covered',n0===60&&await p.evaluate(()=>coverageMissing('willow').length===0&&validateAll().length===0),`count=${n0}`);
+ok('Sample opens on Rotation view; first Jones rotation generated (112), all covered',n0===112&&await p.evaluate(()=>mode==='Rotation'&&period().kind==='rotation')&&await p.evaluate(()=>coverageMissing('willow').length===0&&validateAll().length===0),`count=${n0}`);
 ok('Persisted to localStorage',await p.evaluate(()=>!!localStorage.getItem(KEY)));
 await p.screenshot({path:out+'/01-schedule-jones.png'});
 // 2 org multiselect
@@ -63,10 +63,13 @@ await p.click('#modal button.primary');await p.waitForTimeout(100);
 const ferr=await p.textContent('#formerror');
 ok('Cross-org overlap blocked w/ explanation',/Overlapping|rest/i.test(ferr),ferr);
 await p.click('#modal button:has-text("Cancel")');
+// Month and Week remain available
+await p.click('.segmented button:has-text("Week")');ok('Week view available',await p.evaluate(()=>mode==='Week')&&await p.locator('.calendar .day').count()===7);
+await p.click('.segmented button:has-text("Month")');ok('Month view available; target stays a rotation',await p.evaluate(()=>mode==='Month'&&period().kind==='rotation')&&(await p.textContent('.calhead')).includes('November 2026'));
 // drag/drop: move an assignment to another day (expect either move or explained block)
 const dragId=await p.evaluate(()=>state.assignments.find(a=>a.dept==='willow'&&a.date==='2026-11-05').id);
 const before=await p.evaluate(id=>JSON.stringify(state.assignments.find(a=>a.id===id)),dragId);
-await p.dragAndDrop(`[data-assignment="${dragId}"]`,'.org-lane[data-dept="river"][data-date="2026-11-20"]');
+await p.dragAndDrop(`[data-assignment="${dragId}"]`,'.org-lane[data-dept="river"][data-date="2026-11-07"]');
 await p.waitForTimeout(200);
 const afterA=await p.evaluate(id=>JSON.stringify(state.assignments.find(a=>a.id===id)),dragId);
 const toast=await p.textContent('#toast');
@@ -127,6 +130,8 @@ ok('Restore still accepts the sample backup',(await ip.textContent('#toast')).in
 // ---------------------------------------------------------------- rotations and holidays
 const rp=await (await b.newContext({viewport:{width:1366,height:900}})).newPage();const rerr=[];rp.on('pageerror',e=>rerr.push(e.message));
 await rp.goto(URL);await rp.waitForSelector('.calendar');await rp.evaluate(()=>{localStorage.clear()});await rp.reload();await rp.waitForSelector('.calendar');
+await rp.evaluate(()=>{state.rotations=[];state.teamHolidays=[];state.rotationDefaults={};state.assignments=state.assignments.filter(a=>a.date<'2026-12-01');rotationSel={};mode=defaultMode();persist();render()});
+ok('A team without rotations is told to set them up',(await rp.textContent('#main')).includes('has no rotations yet')&&await rp.evaluate(()=>mode==='Month'));
 await rp.click('#nav button:has-text("Rotations")');await rp.waitForSelector('form[onsubmit^="saveRotationDefaults"]');
 await rp.fill('form[onsubmit^="saveRotationDefaults"] input[name=start]','2026-11-01');await rp.fill('form[onsubmit^="saveRotationDefaults"] input[name=length]','8');
 await rp.click('form[onsubmit^="saveRotationDefaults"] button.primary');await rp.waitForTimeout(150);
@@ -172,6 +177,19 @@ await rp.click('button.primary:has-text("Publish")');await rp.click('#modal butt
 ok('Publishing locks the rotation',await rp.evaluate(()=>locked()&&rotationsOf('willow')[0].status==='Published'&&isPublished('willow','2026-12-26')&&!isPublished('willow','2026-12-27')));
 await rp.click('button[aria-label="Next period"]');await rp.waitForTimeout(100);
 ok('Next moves to the following rotation (draft)',await rp.evaluate(()=>period().rotation.name==='2026 Rotation 2'&&!locked()));
+// published version: matches, then shows a change after reopen + edit
+await rp.evaluate(()=>navigate('Rotations'));await rp.click('#rotation-table tbody tr:first-child button:has-text("Published version")');await rp.waitForSelector('#modal[open]');
+ok('Published version matches the current schedule',(await rp.textContent('#modal')).includes('matches the published version'));await rp.click('#modal button:has-text("Close")');
+await rp.evaluate(()=>{rotationSel.willow=rotationsOf('willow')[0].id;reopenNow();let a=state.assignments.find(a=>a.dept==='willow'&&a.date==='2026-11-03');state.assignments=state.assignments.filter(x=>x!==a);persist();navigate('Rotations')});
+await rp.click('#rotation-table tbody tr:first-child button:has-text("Published version")');await rp.waitForSelector('#modal[open]');
+ok('Published version lists changes since publishing',(await rp.textContent('#modal')).includes('Removed since publishing · 1')&&(await rp.textContent('#modal')).includes('reopened'));
+await rp.screenshot({path:out+'/r5-published-version.png'});await rp.click('#modal button:has-text("Close")');
+// reports: scope follows Rotation / Month / Week
+await rp.evaluate(()=>{mode='Rotation';navigate('Reports')});ok('Reports default to the rotation with rotation-by-rotation history',(await rp.textContent('#main')).includes('Rotation by rotation'));
+await rp.screenshot({path:out+'/r6-reports.png',fullPage:true});
+await rp.click('#main .segmented button:has-text("Month")');ok('Reports by month still available',(await rp.textContent('#main')).includes('Monthly workload'));
+await rp.click('#main .segmented button:has-text("Week")');ok('Reports by week still available',(await rp.textContent('#main')).includes('Weekly workload'));
+await rp.click('#main .segmented button:has-text("Rotation")');
 // reports: holiday fairness
 await rp.evaluate(()=>{rotationSel.willow=rotationsOf('willow')[0].id;navigate('Reports')});
 ok('Reports show holiday coverage and fairness',(await rp.textContent('#main')).includes('Holiday fairness over the years')&&(await rp.textContent('#main')).includes('Christmas Day'));
