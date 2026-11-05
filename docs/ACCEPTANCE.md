@@ -32,6 +32,9 @@ These checks do not certify complete clinical correctness.
   defaults, consecutive 8-week rotations, standard holidays, overlap refusal, holiday coverage overrides,
   Rotation view, generation inside the rotation, year-over-year holiday preference, per-rotation maximum,
   publish/lock per team and rotation, older-client safety, reports and CSV holiday column.
+- Live check (2026-11-05, QA workspace, since deleted): defaults and rotations saved, holiday override saved and
+  honored by generation, server-confirmed full coverage with no conflicts, rotation publish with snapshot and
+  history, server refusal of edits inside / re-dating of a published rotation and of overlapping rotations.
 
 ## Before wider release
 
