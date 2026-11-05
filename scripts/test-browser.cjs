@@ -124,6 +124,53 @@ const itoast=await ip.textContent('#toast');await ip.evaluate(()=>navigate('Sche
 ok('Restore rejects injection-shaped IDs',/not a valid/.test(itoast)&&!(await ip.evaluate(()=>window.__pwn===1)),itoast);
 await ip.locator('body').evaluate(()=>navigate('Settings'));await ip.locator('input[type=file]').setInputFiles(path.resolve(__dirname,'../sample-data/sample-workspace.json'));await ip.waitForTimeout(400);
 ok('Restore still accepts the sample backup',(await ip.textContent('#toast')).includes('Backup restored'));
+// ---------------------------------------------------------------- rotations and holidays
+const rp=await (await b.newContext({viewport:{width:1366,height:900}})).newPage();const rerr=[];rp.on('pageerror',e=>rerr.push(e.message));
+await rp.goto(URL);await rp.waitForSelector('.calendar');await rp.evaluate(()=>{localStorage.clear()});await rp.reload();await rp.waitForSelector('.calendar');
+await rp.click('#nav button:has-text("Rotations")');await rp.waitForSelector('form[onsubmit^="saveRotationDefaults"]');
+await rp.fill('form[onsubmit^="saveRotationDefaults"] input[name=start]','2026-11-01');await rp.fill('form[onsubmit^="saveRotationDefaults"] input[name=length]','8');
+await rp.click('form[onsubmit^="saveRotationDefaults"] button.primary');await rp.waitForTimeout(150);
+ok('Rotation defaults saved (8 weeks)',await rp.evaluate(()=>state.rotationDefaults.willow.length===8&&state.rotationDefaults.willow.unit==='weeks'));
+await rp.fill('#rot-count','6');await rp.click('button:has-text("Add rotations")');await rp.waitForTimeout(200);
+ok('Six consecutive 8-week rotations added',await rp.evaluate(()=>{let r=rotationsOf('willow');return r.length===6&&r[0].end==='2026-12-26'&&r[5].end==='2027-10-02'}));
+ok('Standard holidays added to rotations',(await rp.textContent('table')).includes('Thanksgiving Day'));
+await rp.screenshot({path:out+'/r1-rotations.png',fullPage:true});
+// edit first rotation: Christmas needs 2 day providers and no night
+await rp.click('tbody tr:first-child button:has-text("Edit")');await rp.waitForSelector('#modal[open] #holiday-rows');
+const xmasRow=rp.locator('#holiday-rows .holiday-row',{has:rp.locator('input[name=h-date][value="2026-12-25"]')});
+await xmasRow.locator('input[name=h-cov-day]').fill('2');await xmasRow.locator('input[name=h-cov-night]').fill('0');
+await rp.screenshot({path:out+'/r2-rotation-dialog.png'});
+await rp.click('#modal button.primary');await rp.waitForTimeout(150);
+ok('Holiday coverage override saved',await rp.evaluate(()=>required('willow','2026-12-25',shiftType('day'))===2&&required('willow','2026-12-25',shiftType('night'))===0));
+// invalid: overlapping dates refused in the dialog
+await rp.click('tbody tr:nth-child(2) button:has-text("Edit")');await rp.waitForSelector('#modal[open]');await rp.fill('#modal input[name=start]','2026-12-20');await rp.click('#modal button.primary');await rp.waitForTimeout(150);
+ok('Overlapping rotation dates are refused with a reason',/overlap/.test(await rp.textContent('#formerror')),await rp.textContent('#formerror'));
+await rp.click('#modal button:has-text("Cancel")');
+// open in schedule: Rotation view, 8 weeks, holiday tags, open slots incl. override
+await rp.click('tbody tr:first-child button:has-text("Open")');await rp.waitForSelector('.calendar');
+ok('Schedule opens in Rotation view for that rotation',await rp.evaluate(()=>mode==='Rotation'&&period().rotation.name==='2026 Rotation 1'));
+ok('Rotation view shows 8 weeks of days',await rp.locator('.calendar .day:not(.out)').count()===56,String(await rp.locator('.calendar .day:not(.out)').count()));
+ok('Holiday tags shown on the calendar',await rp.locator('.org-lane[data-dept="willow"][data-date="2026-11-26"] .holiday-tag').count()===1);
+ok('Holiday override shapes open slots (2 Day, 0 Night on Christmas)',await rp.locator('.org-lane[data-dept="willow"][data-date="2026-12-25"] .assignment.open').count()===2);
+ok('Coverage stat covers the rotation (112 required)',(await rp.textContent('.stats')).includes('of 112 covered'));
+await rp.click('button:has-text("Generate")');await rp.click('#modal button.primary:has-text("Generate draft")');await rp.waitForTimeout(300);
+ok('Generate fills the rotation without conflicts',await rp.evaluate(()=>coverageMissing().length===0&&validateAll().length===0&&state.assignments.every(a=>a.date<='2026-12-26')));
+await rp.screenshot({path:out+'/r3-rotation-schedule.png'});
+await rp.click('button.primary:has-text("Publish")');await rp.click('#modal button.primary:has-text("Publish schedule")');await rp.waitForTimeout(200);
+ok('Publishing locks the rotation',await rp.evaluate(()=>locked()&&rotationsOf('willow')[0].status==='Published'&&isPublished('willow','2026-12-26')&&!isPublished('willow','2026-12-27')));
+await rp.click('button[aria-label="Next period"]');await rp.waitForTimeout(100);
+ok('Next moves to the following rotation (draft)',await rp.evaluate(()=>period().rotation.name==='2026 Rotation 2'&&!locked()));
+// reports: holiday fairness
+await rp.evaluate(()=>{rotationSel.willow=rotationsOf('willow')[0].id;navigate('Reports')});
+ok('Reports show holiday coverage and fairness',(await rp.textContent('#main')).includes('Holiday fairness over the years')&&(await rp.textContent('#main')).includes('Christmas Day'));
+// providers show rotation limits
+await rp.evaluate(()=>navigate('Providers'));ok('Providers show rotation target/max',(await rp.textContent('table')).includes('20 / 28'));
+// mobile: rotations page fits
+const rm=await (await b.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true})).newPage();await rm.goto(URL);await rm.waitForSelector('.calendar');
+await rm.evaluate(()=>{state.rotationDefaults={willow:{start:'2026-11-01',length:8,unit:'weeks'}};addRotations(2,true);navigate('Rotations')});await rm.waitForTimeout(200);
+ok('Rotations page has no horizontal page overflow on a phone',await rm.evaluate(()=>document.documentElement.scrollWidth<=390),String(await rm.evaluate(()=>document.documentElement.scrollWidth)));
+await rm.screenshot({path:out+'/r4-rotations-mobile.png',fullPage:true});
+ok('No JS errors (rotations)',rerr.length===0,rerr.join(' | '));
 await b.close();
 finish(0);
 })().catch(e=>{console.error(e);finish(1)});

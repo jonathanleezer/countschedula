@@ -26,6 +26,13 @@ These checks do not certify complete clinical correctness.
 - `npm run test:db`: rules, RLS isolation, roles, stale versions, publication, append-only history, import round-trip, sign-up hook, workspace deletion.
 - Live check (2026-11-04, QA workspace, since deleted): sign-in gate, magic link, previewed import, server rejection of client-bypassed rule breaks, form/drag/undo saves, publish lock, stale-tab refusal, invites, snapshots, viewer read-only, mobile nav, sign-out.
 
+## Rotations
+
+- `npm test` (`check-rotations.cjs`), `npm run test:db` (rotation section), `npm run test:browser` (rotation section):
+  defaults, consecutive 8-week rotations, standard holidays, overlap refusal, holiday coverage overrides,
+  Rotation view, generation inside the rotation, year-over-year holiday preference, per-rotation maximum,
+  publish/lock per team and rotation, older-client safety, reports and CSV holiday column.
+
 ## Before wider release
 
 Add tenant-isolation, permission, concurrency, publication/version, transaction, migration, import/schema, solver, DST, accessibility, and browser integration tests. Confirm no real provider information is sent to external services without explicit configuration and authorization.

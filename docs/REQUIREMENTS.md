@@ -40,6 +40,20 @@ Reduce the burden of scheduling inpatient OB providers, initially Certified Nurs
 - Server-side validation of all hard rules and publication locks on every save; optimistic concurrency.
 - Immutable publication history and audit log; rollback snapshots; previewed admin-only restore.
 
+## Rotations (2026-11-05)
+
+Confirmed by the user:
+- Each practice schedules in rotations; default length 8 weeks. Rotations replace calendar months as the unit
+  that is generated, published and locked.
+- Defaults are customizable per team (start date, duration in days/weeks/months); each rotation can have
+  its own dates and its own holidays.
+- Jones Team and Boehm Team each have their own rotation calendar.
+- Provider targets and maximums are counted per rotation (converted once from monthly ×2).
+- Holidays: mark holiday dates, holiday-specific coverage per shift type, fair sharing, and holiday
+  coverage rotated from provider to provider year to year.
+
+Implemented as described in `docs/ARCHITECTURE.md` (Rotations and holidays).
+
 ## Proposed / not implemented
 
 Department-lead and provider roles; provider preview; swaps; conditional approval exceptions; affiliation-specific contracts and quotas; holiday fairness; credential/privilege validation; organization and department CRUD; notifications; archived schedule workflow; explainable optimization solver; shared secure storage and real authentication.

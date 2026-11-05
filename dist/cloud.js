@@ -55,7 +55,7 @@
   async function reload(message){
     const {data,error}=await sb.rpc('get_state',{p_ws:ws});
     if(error){setStatus('Not connected',true);toast('Could not load the shared workspace: '+errorText(error));return false}
-    epoch++;notes=[];nextMode='edit';apply(data);history.length=0;failed=false;chrome();render();
+    epoch++;notes=[];nextMode='edit';const first=!booted;apply(data);if(first)mode=defaultMode();history.length=0;failed=false;chrome();render();
     if(message)toast(message);
     return true;
   }
@@ -96,9 +96,9 @@
     }
     version=data.version;
     if(my===seq){
-      const before=JSON.stringify(state.periods);
-      state.audit=data.audit;state.periods=data.periods;
-      if(before!==JSON.stringify(state.periods)||view==='Activity')render();
+      const before=JSON.stringify([state.periods,state.rotations]);
+      state.audit=data.audit;state.periods=data.periods;if(Array.isArray(data.rotations))state.rotations=data.rotations;
+      if(before!==JSON.stringify([state.periods,state.rotations])||view==='Activity')render();
     }
   }
 
@@ -164,7 +164,7 @@
   document.addEventListener('click',async e=>{
     const t=e.target.closest('[data-cs]');if(!t||t.tagName==='SELECT')return;
     const a=t.dataset.cs;
-    if(a==='signout'){e.preventDefault();await sb.auth.signOut();state={...seed(),providers:[],assignments:[],requests:[]};history.length=0;booted=false;signInScreen('You are signed out.')}
+    if(a==='signout'){e.preventDefault();await sb.auth.signOut();state=migrate({...seed(),providers:[],assignments:[],requests:[]});history.length=0;booted=false;signInScreen('You are signed out.')}
     else if(a==='revoke')memberCall('revoke_invitation',{p_ws:ws,p_email:t.dataset.email},'Invitation revoked');
     else if(a==='remove'){modal(`<h2>Remove ${h(t.dataset.email)}?</h2><p>They will lose access to this workspace immediately.</p><div class="modalactions"><button onclick="closeModal()">Cancel</button><button class="primary danger" data-cs="remove-confirm" data-user="${h(t.dataset.user)}">Remove</button></div>`)}
     else if(a==='remove-confirm'){closeModal();memberCall('remove_member',{p_ws:ws,p_user:t.dataset.user},'Member removed')}

@@ -34,6 +34,7 @@ create function public.t_add(st jsonb, a jsonb) returns jsonb language sql as $$
   select jsonb_set(st, '{assignments}', (st->'assignments') || jsonb_build_array(a)) $$;
 create function public.t_set_period(st jsonb, k text, status text) returns jsonb language sql as $$
   select jsonb_set(st, '{periods}', (st->'periods') || jsonb_build_object(k, jsonb_build_object('status', status))) $$;
+create function public.t_with_rot(st jsonb, rots jsonb) returns jsonb language sql as $$ select jsonb_set(st, '{rotations}', rots) $$;
 grant execute on all functions in schema public to authenticated;
 -- re-apply the production grants that the line above widened
 revoke execute on function public.cs_bootstrap_workspace(text, text, text, text) from authenticated;
@@ -76,7 +77,9 @@ select expect_fail(format($$select t_save(%L::jsonb, 'import')$$, :'sample'), 'P
 select t_login(:admin);
 select t_save(:'sample'::jsonb, 'import', array['Restored workspace backup']);
 select t_assert(jsonb_array_length(t_st()->'assignments') = 60, 'import keeps 60 assignments');
-select t_assert(t_st()->'providers' = (:'sample'::jsonb)->'providers', 'providers round-trip exactly (ids, affiliations, numbers)');
+select t_assert((select jsonb_agg(e - 'rotationTarget' - 'rotationMax') from jsonb_array_elements(t_st()->'providers') e) = (:'sample'::jsonb)->'providers', 'providers round-trip exactly (ids, affiliations, numbers)');
+select t_assert((select bool_and((e->>'rotationTarget')::numeric = (e->>'target')::numeric * 2 and (e->>'rotationMax')::numeric = (e->>'max')::numeric * 2)
+  from jsonb_array_elements(t_st()->'providers') e), 'older backups get rotation limits of 2 x monthly');
 select t_assert(t_st()->'shiftTypes' = (:'sample'::jsonb)->'shiftTypes', 'shift types round-trip exactly');
 select t_assert(t_st()->'assignments' = (:'sample'::jsonb)->'assignments', 'assignments round-trip exactly');
 select t_assert(t_st()->'requests' = (:'sample'::jsonb)->'requests', 'requests round-trip exactly');
@@ -171,6 +174,57 @@ select t_assert((select count(*) from assignments) = 0, 'outsider sees no Vander
 select expect_fail($$select save_state('vm', 0, '{}'::jsonb)$$, 'PT403', 'access');
 select t_login('');
 select expect_fail($$select get_state('vm')$$, 'PT403', 'access');
+-- ------------------------------------------------------------ rotations (per team) and holidays
+select t_login(:sched);
+select t_save(t_with_rot(t_st(), '[{"id":"r-nov","dept":"willow","name":"Nov rotation","start":"2026-11-01","end":"2026-11-30","status":"Draft","holidays":[{"id":"h-tg","name":"Thanksgiving Day","date":"2026-11-26","coverage":{}}]}]'), 'edit', array['Added rotation']);
+select t_assert(t_st()->'rotations'->0->>'name' = 'Nov rotation' and t_st()->'rotations'->0->'holidays'->0->>'name' = 'Thanksgiving Day', 'rotation and holiday round-trip');
+select expect_fail($$select t_save(t_with_rot(t_st(), (t_st()->'rotations') || '[{"id":"r-x","dept":"willow","name":"Overlap","start":"2026-11-20","end":"2026-12-20","status":"Draft","holidays":[]}]'))$$,
+  'PT422', 'overlap');
+select t_save(t_with_rot(t_st(), (t_st()->'rotations') || '[{"id":"r-boehm","dept":"river","name":"Boehm Nov","start":"2026-11-20","end":"2026-12-20","status":"Draft","holidays":[]}]'));
+select t_assert(jsonb_array_length(t_st()->'rotations') = 2, 'teams have independent, possibly overlapping rotation calendars');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{rotations,0,holidays}', '[{"id":"h-bad","name":"Outside","date":"2027-01-01","coverage":{}}]'))$$, 'PT422', 'within the rotation');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{rotations,0,holidays,0,coverage}', '{"day":11}'))$$, 'PT422', 'whole numbers from 0 to 10');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{rotationDefaults}', '{"willow":{"start":"2026-11-01","length":8,"unit":"fortnights"}}'))$$, 'PT422', 'Rotation length');
+select t_save(jsonb_set(t_st(), '{rotationDefaults}', '{"willow":{"start":"2026-11-01","length":8,"unit":"weeks"}}'));
+select t_assert(t_st()->'rotationDefaults'->'willow'->>'unit' = 'weeks', 'rotation defaults saved');
+-- older clients that do not send rotations leave them untouched
+select t_save(t_st() - 'rotations' - 'rotationDefaults' - 'holidayHistory');
+select t_assert(jsonb_array_length(t_st()->'rotations') = 2, 'payload without rotations keeps them');
+-- holiday coverage override counts toward publication: Thanksgiving needs 2 day providers
+select t_save(jsonb_set(t_st(), '{rotations,0,holidays,0,coverage}', '{"day":2}'));
+select expect_fail($$select t_save(jsonb_set(t_st(), '{rotations,0,status}', '"Published"'))$$, 'PT422', 'Cannot publish Nov rotation: 1 open shifts');
+select t_save(jsonb_set(t_st(), '{rotations,0,holidays,0,coverage}', '{}'));
+-- per-rotation maximum (rotation_max) replaces the monthly maximum inside a rotation
+select t_save(jsonb_set(jsonb_set(t_st(), '{providers,5,rotationTarget}', '1'), '{providers,5,rotationMax}',
+  to_jsonb((select count(*) from assignments where provider_id = 'p5' and date between '2026-11-01' and '2026-11-30'))));
+select expect_fail($$select t_save(t_add(t_st(), '{"id":"t-rmax","provider":"p5","dept":"willow","date":"2026-11-28","shift":"clinic-pm"}'))$$,
+  'PT422', 'Rotation maximum of \d+ shifts exceeded · Nov rotation');
+select t_save(jsonb_set(t_st(), '{providers,5,rotationMax}', '28'));
+-- publish the rotation (server builds snapshot, appends history), then it is locked
+select t_save(jsonb_set(t_st(), '{rotations,0,status}', '"Published"'), 'edit', array['Published Nov rotation']);
+select t_assert((select status = 'Published' and jsonb_array_length(snapshot) >= 60 from rotations where id = 'r-nov'), 'rotation published with server snapshot');
+select t_assert((select count(*) from publications where rotation_id = 'r-nov') = 1, 'rotation publication history recorded');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{assignments,0,note}', '"edit inside published rotation"'))$$, 'PT422', 'Nov rotation is published');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{rotations,0,end}', '"2026-11-29"'))$$, 'PT422', 'Reopen Nov rotation before changing');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{rotations,0,holidays}', '[]'))$$, 'PT422', 'Reopen Nov rotation before changing');
+select expect_fail($$select t_save(t_with_rot(t_st(), jsonb_build_array(t_st()->'rotations'->1)))$$, 'PT422', 'Reopen Nov rotation before deleting');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{shiftTypes,4,coverage}', '1'))$$, 'PT422', 'Reopen affected');
+select t_save(t_add(jsonb_set(t_st(), '{providers}', (t_st()->'providers') || '[{"id":"p-boehm","name":"Boehm Only","role":"CNM","target":5,"max":10,"rotationTarget":10,"rotationMax":20,"nights":true,"affiliations":["river"]}]'),
+  '{"id":"t-boehm-nov","provider":"p-boehm","dept":"river","date":"2026-11-28","shift":"clinic-am"}'));
+select t_assert(exists (select 1 from assignments where id = 't-boehm-nov'), 'the other team stays editable during a published rotation');
+-- reopen and edit
+select t_save(jsonb_set(t_st(), '{rotations,0,status}', '"Draft"'), 'edit', array['Reopened Nov rotation']);
+select t_save(jsonb_set(t_st(), '{assignments,0,note}', '"edit after rotation reopen"'));
+select t_assert((select snapshot is not null from rotations where id = 'r-nov'), 'reopen keeps the published snapshot');
+-- holiday history
+select t_save(jsonb_set(t_st(), '{holidayHistory}', '[{"id":"hh1","provider":"p3","holiday":"Christmas Day","year":2025}]'));
+select t_assert(t_st()->'holidayHistory'->0->>'holiday' = 'Christmas Day', 'holiday history round-trip');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{holidayHistory}', '[{"id":"hh2","provider":"p3","holiday":"X","year":1800}]'))$$, 'PT422', 'Invalid workspace data');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{holidayHistory}', '[{"id":"hh3","provider":"nobody","holiday":"X","year":2025}]'))$$, 'PT422', 'does not exist');
+-- import keeps a published rotation and records its publication
+select t_login(:admin);
+select t_save(jsonb_set(jsonb_set(t_st(), '{rotations,1,status}', '"Published"'), '{rotations,1,snapshot}', '[]'), 'import');
+select t_assert((select status from rotations where id = 'r-boehm') = 'Published' and (select count(*) from publications where rotation_id = 'r-boehm') = 1, 'import keeps published rotation');
 reset role;
 -- operator removal of a whole workspace (see docs/OPERATIONS.md)
 begin;

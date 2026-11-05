@@ -59,6 +59,21 @@ had no independent security review.
   pre-existing conflicts in draft periods created by later configuration changes (they are still shown
   as conflicts and block publishing).
 
+## Rotations and holidays — open policy questions
+
+- A shift counts as a holiday shift when its **start date** is the holiday (a Christmas Eve night shift
+  that runs into Christmas morning counts as Christmas Eve). Confirm the practice's rule.
+- The rotation maximum is the same number for every rotation, regardless of the rotation's length. Custom
+  4- or 12-week rotations are not prorated.
+- Holidays are matched across years by name ("Christmas Day"); renaming a holiday starts a new history.
+- Year-over-year holiday rotation is a generator preference, not a hard rule; manual assignments can give
+  someone the same holiday two years running (the Reports page flags it with ⚠).
+- Holiday history only counts holidays that were defined in a rotation (or recorded in "Holiday coverage
+  before CountSchedula"). Assignments made before rotations were set up do not count.
+- Standard US holidays offered: New Year's Day, Memorial Day, Independence Day, Labor Day, Thanksgiving,
+  Christmas Eve, Christmas Day, New Year's Eve. Edit per rotation as needed.
+- Days outside every rotation still use calendar-month periods and monthly limits.
+
 ## UI and reporting
 
 - Month/week stats use full-month counts; the provider filter does not scope coverage metrics.

@@ -91,8 +91,36 @@ night, client and server may disagree about an interval by up to an hour; the se
 
 ### Tests
 
-- `npm test` — original Node VM domain checks plus syntax checks.
+- `npm test` — original Node VM domain checks, `check-rotations.cjs`, and syntax checks.
 - `npm run test:db` — applies the migrations to a throwaway local PostgreSQL with a stub of Supabase's
   `auth` schema and runs `supabase/tests/domain.test.sql` (rules, RLS isolation, roles, concurrency,
   publication, immutability, import round-trip, sign-up hook).
 - `npm run test:browser` — Playwright acceptance checks of the local mode (desktop and phone).
+
+## Rotations and holidays — added 2026-11-05
+
+- **Rotation** = a team's scheduling period (default 8 weeks), stored in `state.rotations` as
+  `{id, dept, name, start, end, status, at?, snapshot?, holidays:[{id, name, date, coverage:{shiftTypeId:n}}]}`.
+  Each team (department) has its own non-overlapping rotations. `state.rotationDefaults[dept]` holds
+  `{start, length, unit}` (days/weeks/months) used by "Add next rotation".
+- **Period abstraction:** `period(dept)` is the selected rotation (toolbar choice → rotation containing the
+  cursor → next upcoming → last) or, when a team has no rotation there, the calendar month. Generate,
+  publish, reopen, reports and the "Edit / generate / publish" target use `period()`. Stats and CSV on the
+  Schedule page use `visibleRange()` (the dates shown: rotation, month, or week).
+- **Locks:** `isPublished(dept, day)` is true inside a published rotation of that team or a published
+  legacy month. Legacy month publications remain valid.
+- **Coverage:** `required(dept, day, type)` returns a holiday's override for that type, else the type's daily
+  coverage. Used by open slots, coverage gaps, generation and publish checks.
+- **Workload:** inside a rotation of the assignment's team, `rotationMax` counts the provider's shifts on all
+  teams during that rotation's dates; outside rotations the monthly `max` applies. `migrate()` set
+  `rotationTarget/rotationMax` to 2× the monthly values once.
+- **Holiday fairness:** holiday gaps are generated first. Candidates are penalised for holiday shifts already
+  in this period, for how often they covered the same holiday (matched by name, case-insensitive) in
+  earlier years, and most strongly for covering it recently. History = CountSchedula assignments on that
+  team's holiday dates + `state.holidayHistory` entries recorded for years before the app. Soft preference,
+  never a hard rule.
+- **Server:** migration `20261105000005_rotations.sql` adds `rotations` (exclusion constraint prevents
+  overlap per team), `rotation_holidays`, `holiday_history`, `providers.rotation_target/rotation_max`,
+  `workspaces.rotation_defaults`, `publications.rotation_id`; `cs_violations`, `cs_required`,
+  `cs_is_locked`, coverage and `save_state` mirror the client. Payloads that omit the rotation keys
+  (older cached clients) leave rotations unchanged.
