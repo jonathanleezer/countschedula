@@ -195,6 +195,20 @@ await rp.evaluate(()=>{rotationSel.willow=rotationsOf('willow')[0].id;navigate('
 ok('Reports show holiday coverage and fairness',(await rp.textContent('#main')).includes('Holiday fairness over the years')&&(await rp.textContent('#main')).includes('Christmas Day'));
 // providers show rotation limits
 await rp.evaluate(()=>navigate('Providers'));ok('Providers show rotation target/max',(await rp.textContent('table')).includes('20 / 28'));
+// weekly shift pattern + date-specific shift on rotation 2
+await rp.evaluate(()=>navigate('Rotations'));await rp.click('#rotation-table tbody tr:nth-child(2) button:has-text("Edit")');await rp.waitForSelector('#modal[open] .pattern-grid');
+await rp.click('#modal .pattern-grid tr[data-type="clinic-am"] button[title="Mon–Fri"]');
+await rp.click('#modal button:has-text("+ Add date-specific shift")');await rp.fill('#ds-rows .ds-row:last-child input[name=ds-date]','2027-01-15');await rp.selectOption('#ds-rows .ds-row:last-child select[name=ds-type]','triage');await rp.fill('#ds-rows .ds-row:last-child input[name=ds-count]','2');
+await rp.screenshot({path:out+'/r7-weekly-shifts.png'});await rp.click('#modal button.primary');await rp.waitForTimeout(150);
+ok('Weekly pattern and date-specific shift saved',await rp.evaluate(()=>{let r=rotationsOf('willow')[1];return r.pattern['clinic-am'].days.join()==='1,2,3,4,5'&&r.pattern.day.days.length===7&&r.dateShifts['2027-01-15'].triage===2}));
+ok('Rotations table summarises weekly shifts',(await rp.textContent('#rotation-table')).includes('Mon–Fri'));
+await rp.click('#rotation-table tbody tr:nth-child(2) button:has-text("Open")');await rp.waitForSelector('.calendar');
+ok('Clinic AM open on Monday, not on Saturday',await rp.locator('.org-lane[data-dept="willow"][data-date="2027-01-04"] .assignment.open:has-text("Clinic AM")').count()===1&&await rp.locator('.org-lane[data-dept="willow"][data-date="2027-01-09"] .assignment.open:has-text("Clinic AM")').count()===0);
+ok('Date-specific shift adds 2 Triage on Jan 15',await rp.locator('.org-lane[data-dept="willow"][data-date="2027-01-15"] .assignment.open:has-text("Triage")').count()===2);
+// team default pattern is used by the next rotation
+await rp.evaluate(()=>navigate('Rotations'));await rp.click('form[onsubmit^="saveRotationDefaults"] .pattern-grid tr[data-type="clinic-pm"] button[title="Mon–Fri"]');await rp.click('form[onsubmit^="saveRotationDefaults"] button.primary');await rp.waitForTimeout(150);
+await rp.click('button:has-text("+ Add next rotation")');await rp.waitForTimeout(150);
+ok('New rotation starts from the team default weekly pattern',await rp.evaluate(()=>{let l=rotationsOf('willow'),r=l[l.length-1];return r.pattern&&r.pattern['clinic-pm']?.days.join()==='1,2,3,4,5'}));
 // mobile: rotations page fits
 const rm=await (await b.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true})).newPage();await rm.goto(URL);await rm.waitForSelector('.calendar');
 await rm.evaluate(()=>{state.rotationDefaults={willow:{start:'2026-11-01',length:8,unit:'weeks'}};addStandardTeamHolidays();addRotations(2);navigate('Rotations')});await rm.waitForTimeout(200);

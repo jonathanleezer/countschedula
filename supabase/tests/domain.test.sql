@@ -221,6 +221,28 @@ select t_save(jsonb_set(t_st(), '{holidayHistory}', '[{"id":"hh1","provider":"p3
 select t_assert(t_st()->'holidayHistory'->0->>'holiday' = 'Christmas Day', 'holiday history round-trip');
 select expect_fail($$select t_save(jsonb_set(t_st(), '{holidayHistory}', '[{"id":"hh2","provider":"p3","holiday":"X","year":1800}]'))$$, 'PT422', 'Invalid workspace data');
 select expect_fail($$select t_save(jsonb_set(t_st(), '{holidayHistory}', '[{"id":"hh3","provider":"nobody","holiday":"X","year":2025}]'))$$, 'PT422', 'does not exist');
+-- weekly shift patterns and date-specific shifts (server publish check mirrors required())
+select t_assert(t_st()->'rotations'->0->'dateShifts' = '{}'::jsonb and not (t_st()->'rotations'->0 ? 'pattern'), 'rotations default to no pattern and no date-specific shifts');
+select t_save(jsonb_set(t_st(), '{rotations,0,pattern}', '{"day":{"days":[0,1,2,3,4,5,6],"count":1},"night":{"days":[0,1,2,3,4,5,6],"count":1},"clinic-am":{"days":[1,2,3,4,5],"count":1}}'));
+select t_assert(t_st()->'rotations'->0->'pattern'->'clinic-am'->'days' = '[1,2,3,4,5]', 'weekly pattern round-trip');
+select t_assert(cs_required('vm', 'willow', '2026-11-02', 'clinic-am', 0, true) = 1 and cs_required('vm', 'willow', '2026-11-07', 'clinic-am', 0, true) = 0
+  and cs_required('vm', 'willow', '2026-11-07', 'triage', 0, true) = 0 and cs_required('vm', 'river', '2026-11-25', 'triage', 0, true) = 0, 'server weekday pattern');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{rotations,0,status}', '"Published"'))$$, 'PT422', 'Cannot publish Nov rotation: 21 open shifts');
+select t_save(jsonb_set(t_st(), '{rotations,0,dateShifts}', '{"2026-11-27":{"triage":2},"2026-11-26":{"day":3}}'));
+select t_assert(cs_required('vm', 'willow', '2026-11-27', 'triage', 0, true) = 2 and cs_required('vm', 'willow', '2026-11-26', 'day', 1, true) = 3, 'date-specific shifts on the server (beat holidays)');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{rotations,0,status}', '"Published"'))$$, 'PT422', 'Cannot publish Nov rotation: 25 open shifts');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{rotations,0,pattern}', '{"day":{"days":[7],"count":1}}'))$$, 'PT422', 'days of the week');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{rotations,0,pattern}', '{"day":{"days":[1],"count":0}}'))$$, 'PT422', 'days of the week');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{rotations,0,dateShifts}', '{"2027-03-01":{"day":1}}'))$$, 'PT422', 'within the rotation dates');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{rotations,0,dateShifts}', '{"2026-11-27":{"day":11}}'))$$, 'PT422', 'date-specific shifts need');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{rotationDefaults,willow,pattern}', '{"day":{"days":[1,1],"count":1}}'))$$, 'PT422', 'Default rotation');
+select t_save(jsonb_set(t_st(), '{rotationDefaults,willow,pattern}', '{"day":{"days":[0,1,2,3,4,5,6],"count":1}}'));
+select t_assert(t_st()->'rotationDefaults'->'willow'->'pattern'->'day'->>'count' = '1', 'team default pattern saved');
+-- publish with the daily-default pattern, then the pattern is frozen
+select t_save(jsonb_set(jsonb_set(t_st() #- '{rotations,0,pattern}', '{rotations,0,dateShifts}', '{}'), '{rotations,0,status}', '"Published"'));
+select expect_fail($$select t_save(jsonb_set(t_st(), '{rotations,0,pattern}', '{"day":{"days":[1],"count":1}}'))$$, 'PT422', 'Reopen Nov rotation before changing its dates, weekly shifts');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{rotations,0,dateShifts}', '{"2026-11-27":{"triage":1}}'))$$, 'PT422', 'Reopen Nov rotation before changing');
+select t_save(jsonb_set(t_st(), '{rotations,0,status}', '"Draft"'));
 -- per-team holiday calendars
 select t_save(jsonb_set(t_st(), '{teamHolidays}', '[{"id":"th-xmas","dept":"willow","name":"Christmas Day","kind":"fixed","month":12,"day":25,"coverage":{"day":2}},
   {"id":"th-tg","dept":"willow","name":"Thanksgiving Day","kind":"nth","month":11,"weekday":4,"nth":4,"coverage":{}},

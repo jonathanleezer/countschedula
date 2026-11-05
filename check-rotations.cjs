@@ -108,4 +108,26 @@ rotationSel.willow=rs[0].id;download=t=>out=t;exportCSV();must(out.split('\\r\\n
 state=migrate(seed());rotationSel={};mode='Rotation';cursor=new Date(2026,10,1);seedRotations();
 must(rotationsOf('willow').length===6&&rotationsOf('river').length===6&&teamHolidays('river').length===8&&rotationsOf('river')[0].holidays.some(h=>h.name==='Thanksgiving Day'),'Sample has rotations and holidays for both teams');
 generate(true);must(relevant().length===112-1+1&&coverageMissing().length===0&&validateAll().length===0,'Sample generation fills the first Jones rotation: '+relevant().length+' / '+coverageMissing().length+' open');
-console.log('PASS: rotation-first views (month/week target the covering rotation, no month fallback, no coverage outside rotations, rotation/month/week reports, request rotations, CSV rotation, rotation-first sample); team holiday calendars (rules, per-team, copy, sync, frozen when published), per-rotation limits migration, durations, per-team rotations from defaults, standard holidays, validation, holiday coverage overrides, year-over-year holiday rotation, rotation generation/max/publish/locks, rendering, CSV');`,ctx);
+// weekly shift patterns and date-specific shifts
+must(JSON.stringify(defaultPattern())===JSON.stringify({day:{days:[0,1,2,3,4,5,6],count:1},night:{days:[0,1,2,3,4,5,6],count:1}}),'Default pattern mirrors daily defaults');
+state.rotationDefaults.willow.pattern={day:{days:[0,1,2,3,4,5,6],count:1},night:{days:[0,1,2,3,4,5,6],count:1},'clinic-am':{days:[1,2,3,4,5],count:1}};
+let pr2=nextRotation('willow');must(pr2.pattern['clinic-am'].days.join()==='1,2,3,4,5'&&pr2.pattern!==state.rotationDefaults.willow.pattern,'New rotations copy the team default pattern');
+let R2=rotationsOf('willow')[1];R2.pattern=JSON.parse(JSON.stringify(state.rotationDefaults.willow.pattern));
+must(required('willow','2027-01-04',shiftType('clinic-am'))===1&&required('willow','2027-01-09',shiftType('clinic-am'))===0,'Clinic AM on Monday only, not Saturday');
+must(required('willow','2027-01-09',shiftType('triage'))===0&&required('willow','2027-01-09',shiftType('day'))===1,'Types outside the pattern are not scheduled');
+must(required('willow','2026-12-02',shiftType('clinic-am'))===0&&required('willow','2026-12-02',shiftType('day'))===1,'Rotation without a pattern keeps daily defaults');
+R2.dateShifts={'2027-01-15':{triage:2,day:0},'2027-01-01':{day:3}};
+let nyd=R2.holidays.find(h=>h.date==='2027-01-01');nyd.coverage={day:2};
+must(required('willow','2027-01-15',shiftType('triage'))===2&&required('willow','2027-01-15',shiftType('day'))===0,'Date-specific shifts add and remove');
+must(required('willow','2027-01-01',shiftType('day'))===3,'Date-specific shift beats holiday staffing');
+delete R2.dateShifts['2027-01-01'];must(required('willow','2027-01-01',shiftType('day'))===2,'Holiday staffing beats the weekly pattern');
+const badR=(r,msg)=>{try{validateRotations(state.rotations.map(x=>x.id===R2.id?r:x));throw Error('accepted: '+msg)}catch(e){if(e.message.startsWith('accepted'))throw e}};
+badR({...R2,pattern:{day:{days:[0,7],count:1}}},'weekday 7');badR({...R2,pattern:{day:{days:[1],count:0}}},'count 0');
+badR({...R2,dateShifts:{'2027-06-01':{day:1}}},'date outside rotation');badR({...R2,dateShifts:{'2027-01-15':{day:11}}},'count 11');
+validateRotations(state.rotations);
+rotationSel.willow=R2.id;mode='Rotation';generate(true);
+must(coverageMissing().length===0&&validateAll().length===0,'Pattern rotation generated without gaps or conflicts: '+coverageMissing().length);
+let r2a=relevant();must(r2a.filter(a=>a.shift==='clinic-am').every(a=>[1,2,3,4,5].includes(date(a.date).getDay()))&&r2a.some(a=>a.shift==='clinic-am'),'Clinic AM generated on weekdays only');
+must(r2a.filter(a=>a.date==='2027-01-15'&&a.shift==='day').length===0&&r2a.filter(a=>a.date==='2027-01-15'&&a.shift==='triage').length===2,'Date-specific shifts generated');
+let html2=rotationsPage()+calendarCells();must(html2.includes('Mon–Fri')&&!html2.includes('undefined')&&!html2.includes('NaN'),'Pattern summary rendered');
+console.log('PASS: weekly shift patterns per rotation (team default, weekday selection, date-specific shifts, precedence, validation, generation); rotation-first views (month/week target the covering rotation, no month fallback, no coverage outside rotations, rotation/month/week reports, request rotations, CSV rotation, rotation-first sample); team holiday calendars (rules, per-team, copy, sync, frozen when published), per-rotation limits migration, durations, per-team rotations from defaults, standard holidays, validation, holiday coverage overrides, year-over-year holiday rotation, rotation generation/max/publish/locks, rendering, CSV');`,ctx);

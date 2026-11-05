@@ -117,6 +117,13 @@ night, client and server may disagree about an interval by up to an hour; the se
   (snapshot vs. current, history in shared mode via `list_publications`); Requests show the rotations they
   touch; CSV has a Rotation column. The local pilot sample seeds 8-week rotations and standard holidays for both
   teams (`seedRotations()`).
+- **Weekly shifts and date-specific shifts** (2026-11-05): `rotation.pattern` =
+  `{shiftTypeId: {days:[0–6], count}}` chooses which shift types run on which weekdays; teams set a default
+  pattern in `rotationDefaults[dept].pattern`, copied into each new rotation. `rotation.dateShifts` =
+  `{date: {shiftTypeId: n}}` sets one shift type's count on one date (0 removes it). `required()` precedence:
+  date-specific shift > holiday staffing > weekly pattern > shift type daily default (rotations without a pattern).
+  Server: `rotations.pattern/date_shifts`, `cs_required()` with the same precedence, frozen on published rotations
+  (migration `20261105000007_rotation_shift_patterns.sql`).
 - **Locks:** `isPublished(dept, day)` is true inside a published rotation of that team or a published
   legacy month. Legacy month publications remain valid.
 - **Coverage:** `required(dept, day, type)` returns a holiday's override for that type, else the type's daily

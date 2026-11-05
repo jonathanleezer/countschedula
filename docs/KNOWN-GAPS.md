@@ -74,6 +74,10 @@ had no independent security review.
   Easter) and "observed" weekday shifts (Jul 4 on a Saturday observed Friday) need a single-date entry per year.
 - The server stores team holidays but does not re-derive rotation holiday dates from the rules; the client keeps
   draft rotations in step.
+- Changing a team's default weekly pattern affects only rotations added afterwards; use "Use team default pattern"
+  in a draft rotation to apply it there.
+- A weekly pattern has one provider count per shift type for all its days (e.g. not 2 on Mondays and 1 on Fridays);
+  use date-specific shifts for exceptions.
 - Standard US holidays offered: New Year's Day, Memorial Day, Independence Day, Labor Day, Thanksgiving,
   Christmas Eve, Christmas Day, New Year's Eve. Edit per rotation as needed.
 - Teams with rotations have no coverage requirement (and no open shifts) outside their rotations; this is a client
