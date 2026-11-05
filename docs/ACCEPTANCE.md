@@ -38,6 +38,11 @@ These checks do not certify complete clinical correctness.
 - Live check (2026-11-05, QA workspace, since deleted): per-team holiday calendars saved on the server, each team's
   rotations carry only its own linked holidays, team staffing shapes the calendar, deleting a team holiday updates
   drafts while the published rotation keeps its holidays, reload persists.
+- Live check (2026-11-05, QA workspace, since deleted): rotation-first Schedule and Reports, set-up prompt for a team
+  without rotations, team default weekly pattern (Clinic AM Mon–Fri) and date-specific shift saved on the server,
+  Monday rotation shown Mon–Sun with week labels, server-confirmed generation (40 weekday Clinic AM, 2 Triage on the
+  chosen date, no gaps or conflicts), publish, refusal to change a published rotation's weekly shifts, published
+  version with publication history.
 
 ## Before wider release
 
