@@ -95,6 +95,9 @@ had no independent security review.
 
 ## Viewer role and Synergy
 
+- My schedule remembers the last view and colleagues per device (browser storage), not across devices.
+- Trade suggestions use only the published schedules the viewer can see (not other teams' shifts or others'
+  unapproved time off). There is no in-app trade request or approval yet; the scheduler makes the change.
 - Synergy is not connected: "entered in Synergy" is a manual mark by a scheduler. There is no import from or export to
   Synergy, so CountSchedula cannot detect changes made directly in Synergy.
 - No notifications: schedulers learn about new, changed or withdrawn requests from the Requests page, the Synergy

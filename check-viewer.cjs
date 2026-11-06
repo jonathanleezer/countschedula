@@ -2,7 +2,7 @@
 const vm=require('node:vm'),fs=require('node:fs');let code=fs.readFileSync('dist/app.js','utf8');code=code.slice(0,code.lastIndexOf('/*@boot*/'));
 const cloud={r:'viewer',m:'p3',v:['willow'],role(){return this.r},me(){return this.m},visible(){return this.v},save(){},note(){},roleLabel(){return this.r},settingsPanels(){return '<div id="cs-account"></div>'},calls:[],
  submitRequest(...a){this.calls.push(['submit',...a]);return Promise.resolve(null)},updateRequest(...a){this.calls.push(['update',...a]);return Promise.resolve(null)},withdrawRequest(...a){this.calls.push(['withdraw',...a]);return Promise.resolve(null)},markSynergy(...a){this.calls.push(['mark',...a])}};
-const ctx=vm.createContext({console,crypto:require('node:crypto').webcrypto,localStorage:{getItem:()=>null,setItem:()=>{}},document:{addEventListener:()=>{},querySelector:()=>({open:false}),querySelectorAll:()=>[]},window:{COUNTSCHEDULA_CONFIG:{supabaseUrl:'x'},CountSchedulaCloud:cloud}});
+const ctx=vm.createContext({console,crypto:require('node:crypto').webcrypto,localStorage:(()=>{let m={};return {getItem:k=>k in m?m[k]:null,setItem:(k,v)=>{m[k]=String(v)},removeItem:k=>{delete m[k]}}})(),document:{addEventListener:()=>{},querySelector:()=>({open:false}),querySelectorAll:()=>[]},window:{COUNTSCHEDULA_CONFIG:{supabaseUrl:'x'},CountSchedulaCloud:cloud}});
 vm.runInContext(code,ctx);ctx.CLOUDSTUB=cloud;
 vm.runInContext(`render=()=>{};modal=()=>{};closeModal=()=>{};toast=()=>{};
 const must=(c,m)=>{if(!c)throw Error(m)};
@@ -15,7 +15,33 @@ CLOUDSTUB.r='viewer';
 must(isViewer()&&!isScheduler()&&myProvider()==='p3','viewer role from the cloud client');
 must(JSON.stringify(navPages().map(p=>p[1]))==='["My schedule","Schedule","Time off","Settings"]','viewer navigation');
 let my=mySchedulePage();must(my.includes('Rachel Morgan')&&my.includes('Synergy is the official record')&&my.includes('Next shift')&&!my.includes('undefined')&&!my.includes('NaN'),'My schedule renders with the Synergy notice');
-must(my.split('<tr class=').length-1===state.assignments.filter(a=>a.provider==='p3'&&a.date>=iso(new Date())).length,'My schedule lists the viewer’s upcoming shifts');
+must(my.split('<tr class=').length-1===state.assignments.filter(a=>a.provider==='p3'&&a.date>=myRange().start&&a.date<=myRange().end).length,'My schedule lists the viewer’s shifts in the selected rotation');
+// list / calendar, remembered per person on this device
+must(uiGet().view===undefined&&my.includes('Your shifts ·')&&!my.includes('my-calendar'),'list view by default');
+uiSet({view:'calendar'});my=mySchedulePage();
+must(my.includes('my-calendar')&&my.includes('mychip mine')&&!my.includes('Your shifts ·'),'calendar view');
+must(my.split('mychip mine').length-1===state.assignments.filter(a=>a.provider==='p3'&&a.date>=myRange().start&&a.date<=myRange().end).length,'calendar shows each of my shifts once');
+must(JSON.parse(localStorage.getItem(uiKey())).view==='calendar','last view is remembered');
+// colleagues
+must(colleaguePicker().includes('Everyone on Jones Team')&&!colleaguePicker().includes('value="p3"'),'colleague picker lists teammates, not me');
+setColleague('p4',true);my=mySchedulePage();
+must(my.includes('<b>Mia Patel</b>')&&colleagues().join()==='p4','a colleague’s shifts appear with their name');
+setTeamColleagues('willow',true);must(colleagues().length===state.providers.filter(p=>p.id!=='p3'&&p.affiliations.includes('willow')).length,'everyone on a team');
+uiSet({colleagues:[]});uiSet({view:'list'});setColleague('p4',true);my=mySchedulePage();
+must(my.includes('Colleagues ·')&&my.includes('Mia Patel'),'colleagues table in list view');uiSet({colleagues:[]});
+// rotation navigation
+let r0=myRotation();myStep(1);must(myRotation()!==r0||rotationsOf(myTeam()).length===1,'next rotation');myStep(-1);must(myRotation()===r0,'previous rotation');
+// trade finder against a hand-checked case: p3 works Mon 2026-12-07 Day; p4 is free that day and the days around it
+state.assignments=state.assignments.filter(a=>a.date<'2026-12-04'||a.date>'2026-12-10');
+state.assignments.push({id:'t-mine',provider:'p3',dept:'willow',date:'2026-12-07',shift:'day'},{id:'t-p0',provider:'p0',dept:'willow',date:'2026-12-07',shift:'night'},{id:'t-p4',provider:'p4',dept:'willow',date:'2026-12-09',shift:'day'});
+let o=tradeOptions('t-mine'),can=o.cover.filter(c=>!c.errors.length).map(c=>c.p.id);
+must(can.includes('p4')&&!can.includes('p0'),'cover: free colleague can take it; one working that night cannot (rest/overlap)');
+must(o.cover.find(c=>c.p.id==='p0').errors.length>0,'reason shown for the unavailable colleague');
+must(o.swaps.some(s=>s.p.id==='p4'&&s.b.id==='t-p4'),'swap with p4’s Dec 9 day works both ways');
+must(o.swaps.some(s=>s.b.id==='t-p0'),'same-day Day↔Night exchange is a valid swap');
+state.assignments.push({id:'t-p0b',provider:'p0',dept:'willow',date:'2026-12-06',shift:'night'});
+must(!tradeOptions('t-mine').swaps.some(s=>s.b.id==='t-p0b'),'a swap that would break the 12h rest for me is not offered');
+must(tradeOptions('t-p4')===null,'cannot trade someone else’s shift');
 let cal=calendarCells();
 must(!cal.includes('class="add"')&&!cal.includes('assignment open')&&!cal.includes('onclick="assignmentDialog'),'viewer calendar is read-only (no add buttons, open slots or editors)');
 must(cal.includes('assignment mine')&&cal.includes('Off · Mia Patel'),'own shifts highlighted; others’ approved time off shown as Off');

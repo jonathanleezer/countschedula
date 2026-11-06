@@ -116,6 +116,7 @@
     note(text){notes.push(String(text).slice(0,500))},
     role(){return role||'viewer'},
     me(){return me},
+    userId(){return user?.id||null},
     visible(){return visibleDeps},
     // self-service time off and Synergy marks: server functions that bump the version, then reload
     async submitRequest(start,end,reason){return rpcThenReload('submit_request',{p_ws:ws,p_start:start,p_end:end,p_reason:reason||null})},

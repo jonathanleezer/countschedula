@@ -151,6 +151,12 @@ night, client and server may disagree about an interval by up to an hour; the se
   - Client: viewers get My schedule, a read-only Schedule (own shifts outlined, "Off" markers), Time off, Settings.
     Schedulers see Synergy columns on Requests and Rotations and a to-do notice on Schedule; anyone with a linked
     provider also gets My schedule.
+- **My schedule** (2026-11-06): List or Calendar view of the person's shifts for a chosen team rotation (‹ ›),
+  with optional colleagues (individuals or "everyone on a team", any visible team). The last view, team, rotation
+  and colleagues are remembered per person on this device (`localStorage` key `countschedula-ui:<user id>`).
+  "Find a trade" (`tradeOptions`) lists colleagues on that team who could cover the shift (`violations()` with the
+  provider swapped) and one-for-one swaps in the same rotation that pass the rules for both people. It only sees
+  what the viewer can see; trades are made by the scheduler and entered in Synergy.
 - **Locks:** `isPublished(dept, day)` is true inside a published rotation of that team or a published
   legacy month. Legacy month publications remain valid.
 - **Coverage:** `required(dept, day, type)` returns a holiday's override for that type, else the type's daily
