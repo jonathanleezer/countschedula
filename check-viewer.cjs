@@ -43,7 +43,7 @@ state.assignments.push({id:'t-p0b',provider:'p0',dept:'willow',date:'2026-12-06'
 must(!tradeOptions('t-mine').swaps.some(s=>s.b.id==='t-p0b'),'a swap that would break the 12h rest for me is not offered');
 must(tradeOptions('t-p4')===null,'cannot trade someone else’s shift');
 // trade filters: colleagues and dates
-let full=tradeOptions('t-mine'),fs=x=>tradeFiltered(full,{people:null,dates:[],from:'',to:'',...x});
+let full=tradeOptions('t-mine'),fs=x=>tradeFiltered(full,{people:null,dates:[],from:'',to:'',like:false,...x});
 must(fs({}).swaps.length===full.swaps.length&&fs({}).cover.length===full.cover.length,'no filters → everything');
 must(fs({people:['p4']}).swaps.every(s=>s.p.id==='p4')&&fs({people:['p4']}).cover.every(c=>c.p.id==='p4')&&fs({people:['p4']}).swaps.length>0,'colleague filter narrows cover and swaps');
 must(fs({people:[]}).swaps.length===0&&fs({people:[]}).cover.length===0,'no colleagues selected → nothing');
@@ -52,7 +52,21 @@ let pick=[...new Set(full.swaps.map(s=>s.b.date))].slice(0,2);must(pick.length==
 let rg=fs({from:'2026-12-01',to:'2026-12-08'}).swaps;must(rg.length>0&&rg.every(s=>s.b.date>='2026-12-01'&&s.b.date<='2026-12-08'),'date range');
 let mix=fs({dates:['2026-12-09'],from:'2026-12-01',to:'2026-12-03'}).swaps;must(mix.every(s=>s.b.date==='2026-12-09'||(s.b.date>='2026-12-01'&&s.b.date<='2026-12-03'))&&mix.some(s=>s.b.date==='2026-12-09'),'dates or range combined');
 must(fs({from:'2026-12-08'}).swaps.every(s=>s.b.date>='2026-12-08'),'open-ended range');
-tradeFilter={people:null,dates:[],from:'',to:''};
+// like-for-like: nights for nights, weekend shifts (Fri PM – Sun PM) for weekend shifts
+const K=(d,sh)=>shiftKind({date:d,shift:sh});
+must(K('2026-12-11','night').weekend&&K('2026-12-11','night').night,'Friday night = weekend night');
+must(!K('2026-12-11','day').weekend,'Friday day (starts 7a) is not a weekend shift');
+must(K('2026-12-12','day').weekend&&K('2026-12-13','night').weekend&&!K('2026-12-14','day').weekend,'Saturday and Sunday (incl. Sunday night) are weekend; Monday is not');
+// my Mon Dec 7 Day: like-for-like keeps only weekday day shifts
+let like=fs({like:true}).swaps;must(like.length>0&&like.every(s=>!shiftKind(s.b).night&&!shiftKind(s.b).weekend),'weekday day shift → weekday day swaps only');
+must(fs({}).swaps.length>=like.length&&fs({}).swaps.slice(0,like.length).every(s=>sameKind(full.a,s.b)),'with the switch off, same-kind swaps are listed first');
+// a weekend night of mine only matches weekend nights
+state.assignments.push({id:'t-fri-n',provider:'p3',dept:'willow',date:'2026-12-18',shift:'night'},{id:'t-sat-n',provider:'p4',dept:'willow',date:'2026-12-26',shift:'night'},{id:'t-tue-n',provider:'p4',dept:'willow',date:'2026-12-22',shift:'night'},{id:'t-sun-d',provider:'p4',dept:'willow',date:'2026-12-20',shift:'day'});
+let o2=tradeOptions('t-fri-n'),l2=tradeFiltered(o2,{people:null,dates:[],from:'',to:'',like:true}).swaps;
+must(l2.every(s=>shiftKind(s.b).night&&shiftKind(s.b).weekend),'weekend night → weekend nights only');
+must(!l2.some(s=>s.b.id==='t-tue-n'||s.b.id==='t-sun-d')&&tradeFiltered(o2,{people:null,dates:[],from:'',to:'',like:false}).swaps.some(s=>s.b.id==='t-tue-n'||s.b.id==='t-sun-d'),'weekday nights and weekend days are hidden unless the switch is off');
+must(tradeFilter.like===true,'same kind of shift is on by default');
+tradeFilter={people:null,dates:[],from:'',to:'',like:true};
 let cal=calendarCells();
 must(!cal.includes('class="add"')&&!cal.includes('assignment open')&&!cal.includes('onclick="assignmentDialog'),'viewer calendar is read-only (no add buttons, open slots or editors)');
 must(cal.includes('assignment mine')&&cal.includes('Off · Mia Patel'),'own shifts highlighted; others’ approved time off shown as Off');

@@ -156,7 +156,10 @@ night, client and server may disagree about an interval by up to an hour; the se
   and colleagues are remembered per person on this device (`localStorage` key `countschedula-ui:<user id>`).
   "Find a trade" (`tradeOptions`) lists colleagues on that team who could cover the shift (`violations()` with the
   provider swapped) and one-for-one swaps in the same rotation that pass the rules for both people. Filters (`tradeFilter`): colleagues (all by default) and dates that work for the
-  person — any number of specific dates and/or a from–to range (a swap matches a chosen date or the range). It only sees
+  person — any number of specific dates and/or a from–to range (a swap matches a chosen date or the range) and "Same kind of
+  shift" (on by default): nights swap for nights and weekend shifts for weekend shifts (`sameKind`). A weekend shift
+  starts between Friday 12:00 and Sunday 23:59 (`WEEKEND_FROM_FRIDAY_MINUTES`); with the switch off, same-kind swaps
+  are listed first and each row is tagged Night / Weekend. It only sees
   what the viewer can see; trades are made by the scheduler and entered in Synergy.
 - **Locks:** `isPublished(dept, day)` is true inside a published rotation of that team or a published
   legacy month. Legacy month publications remain valid.
