@@ -81,3 +81,11 @@ tr.muted td{color:var(--muted)}
 .mychip .trade-btn{float:right;padding:0 5px;font-size:11px;line-height:16px;border-radius:5px}
 .colleague-picker .org-picker-menu{max-height:60vh;overflow:auto;min-width:240px}
 .cp-team{border-top:1px solid var(--line);padding-top:6px;margin-top:6px}
+.trade-filters{display:grid;gap:12px;border:1px solid var(--line);border-radius:8px;padding:12px;margin:12px 0}
+.trade-filters button{font-size:10px;padding:3px 8px}
+.trade-people{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;max-height:140px;overflow:auto}
+.trade-people label{margin:0}
+.trade-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.trade-chip{font-size:11px;background:#e6f0eb;color:var(--green);border-radius:12px;padding:2px 4px 2px 10px}
+.trade-chip.range{padding-right:10px;background:#eef1f6;color:#3d5270}
+.trade-chip button{border:0;background:transparent;padding:0 4px;font-size:12px;cursor:pointer}

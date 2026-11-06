@@ -42,6 +42,17 @@ must(o.swaps.some(s=>s.b.id==='t-p0'),'same-day Day↔Night exchange is a valid 
 state.assignments.push({id:'t-p0b',provider:'p0',dept:'willow',date:'2026-12-06',shift:'night'});
 must(!tradeOptions('t-mine').swaps.some(s=>s.b.id==='t-p0b'),'a swap that would break the 12h rest for me is not offered');
 must(tradeOptions('t-p4')===null,'cannot trade someone else’s shift');
+// trade filters: colleagues and dates
+let full=tradeOptions('t-mine'),fs=x=>tradeFiltered(full,{people:null,dates:[],from:'',to:'',...x});
+must(fs({}).swaps.length===full.swaps.length&&fs({}).cover.length===full.cover.length,'no filters → everything');
+must(fs({people:['p4']}).swaps.every(s=>s.p.id==='p4')&&fs({people:['p4']}).cover.every(c=>c.p.id==='p4')&&fs({people:['p4']}).swaps.length>0,'colleague filter narrows cover and swaps');
+must(fs({people:[]}).swaps.length===0&&fs({people:[]}).cover.length===0,'no colleagues selected → nothing');
+must(fs({dates:['2026-12-09']}).swaps.length>0&&fs({dates:['2026-12-09']}).swaps.every(s=>s.b.date==='2026-12-09'),'specific date');
+let pick=[...new Set(full.swaps.map(s=>s.b.date))].slice(0,2);must(pick.length===2,'test needs swaps on two dates');let two=fs({dates:pick}).swaps;must(two.every(s=>pick.includes(s.b.date))&&new Set(two.map(s=>s.b.date)).size===2&&two.length===full.swaps.filter(s=>pick.includes(s.b.date)).length,'several specific dates');
+let rg=fs({from:'2026-12-01',to:'2026-12-08'}).swaps;must(rg.length>0&&rg.every(s=>s.b.date>='2026-12-01'&&s.b.date<='2026-12-08'),'date range');
+let mix=fs({dates:['2026-12-09'],from:'2026-12-01',to:'2026-12-03'}).swaps;must(mix.every(s=>s.b.date==='2026-12-09'||(s.b.date>='2026-12-01'&&s.b.date<='2026-12-03'))&&mix.some(s=>s.b.date==='2026-12-09'),'dates or range combined');
+must(fs({from:'2026-12-08'}).swaps.every(s=>s.b.date>='2026-12-08'),'open-ended range');
+tradeFilter={people:null,dates:[],from:'',to:''};
 let cal=calendarCells();
 must(!cal.includes('class="add"')&&!cal.includes('assignment open')&&!cal.includes('onclick="assignmentDialog'),'viewer calendar is read-only (no add buttons, open slots or editors)');
 must(cal.includes('assignment mine')&&cal.includes('Off · Mia Patel'),'own shifts highlighted; others’ approved time off shown as Off');
