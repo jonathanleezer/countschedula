@@ -35,5 +35,10 @@ let rq=requestsPage();must(rq.includes('<th>Synergy</th>')&&rq.includes('via app
 must(synergyTodo().length===2&&schedule().includes('2 items need entering or updating in Synergy'),'Schedule shows what still needs Synergy');
 must(rotationsPage().includes('✓ In Synergy'),'rotation Synergy status on the Rotations page');
 must(calendarCells().includes('class="add"')&&calendarCells().includes('onclick="assignmentDialog'),'scheduler calendar stays editable');
+// status follows edits immediately: an entered approval that is then declined shows Changed
+state.requests.push({id:'r7',provider:'p3',start:'2027-01-05',end:'2027-01-06',status:'Approved',synergy:{status:'ok',at:'2026-11-05T10:00:00Z',entered:{start:'2027-01-05',end:'2027-01-06',status:'Approved'}}});
+must(requestSynergy(state.requests.at(-1)).status==='ok','entered and unchanged → ok');state.requests.at(-1).status='Declined';
+must(requestSynergy(state.requests.at(-1)).status==='changed'&&requestsPage().includes("markSynergy('request','r7')"),'declining after Synergy entry → changed, without reload');
+state.requests.pop();state.requests[0].synergy={status:'none'};must(requestSynergy(state.requests[0]).status==='not-entered','newly approved → not entered, without reload');
 markSynergy('request','r9');must(CLOUDSTUB.calls.some(c=>c[0]==='mark'&&c[2]==='r9'),'Mark entered calls the server');
 console.log('PASS: viewer navigation, My schedule, read-only team calendar, off markers, own time off, unlinked accounts; scheduler Synergy status, notices and marks');`,ctx);
