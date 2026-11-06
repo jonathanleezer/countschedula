@@ -6,7 +6,7 @@
   const cfg=window.COUNTSCHEDULA_CONFIG;
   if(!cfg||!cfg.supabaseUrl||!cfg.supabaseKey)return;
   const sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-  let ws=null,wsName='',version=0,role=null,user=null,notes=[],nextMode='edit',chain=Promise.resolve(),epoch=0,inflight=0,seq=0,booted=false,pollTimer=null;
+  let ws=null,wsName='',version=0,role=null,user=null,me=null,visibleDeps=null,notes=[],nextMode='edit',chain=Promise.resolve(),epoch=0,inflight=0,seq=0,booted=false,pollTimer=null;
   const roleNames={admin:'Administrator',scheduler:'Scheduler',viewer:'Viewer (read only)'};
   const h=s=>esc(s); // app.js HTML escaper
 
@@ -50,12 +50,15 @@
 
   function apply(data){
     version=data.version;role=data.role;ws=data.workspace.id;wsName=data.workspace.name;
+    me=data.me?.provider||null;visibleDeps=Array.isArray(data.visibleDepartments)?data.visibleDepartments:null;
     state=migrate(data.state);
+    // keep the display and editing target on teams this person can see
+    if(visibleDeps){if(!visibleDeps.includes(dept)&&visibleDeps.length)dept=visibleDeps[0];selectedOrgs=selectedOrgs.filter(id=>visibleOrgs().some(o=>o.id===id));if(!selectedOrgs.length&&visibleOrgs().length)selectedOrgs=[visibleOrgs()[0].id]}
   }
   async function reload(message){
     const {data,error}=await sb.rpc('get_state',{p_ws:ws});
     if(error){setStatus('Not connected',true);toast('Could not load the shared workspace: '+errorText(error));return false}
-    epoch++;notes=[];nextMode='edit';const first=!booted;apply(data);if(first)mode=defaultMode();history.length=0;failed=false;chrome();render();
+    epoch++;notes=[];nextMode='edit';const first=!booted;apply(data);if(first){mode=defaultMode();if(role==='viewer'||me)view='My schedule'}history.length=0;failed=false;chrome();render();
     if(message)toast(message);
     return true;
   }
@@ -83,6 +86,12 @@
     document.addEventListener('visibilitychange',check);
   }
 
+  async function rpcThenReload(fn,args){
+    if(inflight){await chain}
+    const {error}=await sb.rpc(fn,args);
+    if(error){await reload();return errorText(error)}
+    await reload();return null;
+  }
   async function send(st,n,mode,my){
     const {data,error}=await sb.rpc('save_state',{p_ws:ws,p_base_version:version,p_state:st,p_notes:n,p_mode:mode});
     if(error){
@@ -105,6 +114,14 @@
   window.CountSchedulaCloud={
     active:true,
     note(text){notes.push(String(text).slice(0,500))},
+    role(){return role||'viewer'},
+    me(){return me},
+    visible(){return visibleDeps},
+    // self-service time off and Synergy marks: server functions that bump the version, then reload
+    async submitRequest(start,end,reason){return rpcThenReload('submit_request',{p_ws:ws,p_start:start,p_end:end,p_reason:reason||null})},
+    async updateRequest(id,start,end,reason){return rpcThenReload('update_request',{p_ws:ws,p_id:id,p_start:start,p_end:end,p_reason:reason||null})},
+    async withdrawRequest(id){return rpcThenReload('withdraw_request',{p_ws:ws,p_id:id})},
+    async markSynergy(kind,id){const err=await rpcThenReload('mark_synergy',{p_ws:ws,p_kind:kind,p_id:id});toast(err||'Recorded as entered in Synergy');return err},
     async publicationHistory(department,rotationId){const {data,error}=await sb.rpc('list_publications',{p_ws:ws,p_dept:department,p_month:rotationId});return error?null:data},
     roleLabel(){return (roleNames[role]||role||'')+(user?' · '+user.email:'')},
     save(){
@@ -151,8 +168,12 @@
   }
   function renderMembers(el,data){
     const opts=r=>['admin','scheduler','viewer'].map(x=>`<option value="${x}" ${x===r?'selected':''}>${h(roleNames[x])}</option>`).join('');
-    el.innerHTML=`<h3>Team access</h3><div class="tablewrap"><table><thead><tr><th>Member</th><th>Role</th><th></th></tr></thead><tbody>${data.members.map(x=>`<tr><td>${h(x.email)}${x.user_id===user.id?' <small class="muted">(you)</small>':''}<br><small class="muted">${x.last_sign_in?'Last sign-in '+h(new Date(x.last_sign_in).toLocaleDateString()):'Never signed in'}</small></td><td><select data-cs="role" data-user="${h(x.user_id)}" aria-label="Role for ${h(x.email)}">${opts(x.role)}</select></td><td><button class="danger" data-cs="remove" data-user="${h(x.user_id)}" data-email="${h(x.email)}">Remove</button></td></tr>`).join('')}${data.invitations.map(x=>`<tr><td>${h(x.email)}<br><small class="muted">Invited · not signed in yet</small></td><td>${h(roleNames[x.role])}</td><td><button data-cs="revoke" data-email="${h(x.email)}">Revoke</button></td></tr>`).join('')}</tbody></table></div><form id="cs-invite" class="formgrid" style="margin-top:12px"><label>Email<input type="email" name="email" required maxlength="200"></label><label>Role<select name="role">${opts('scheduler')}</select></label><div class="full"><button class="primary">Invite</button></div></form><p class="muted">Invited people sign in from this site with their email. On the free email service only a few sign-in emails can be sent per hour; configure custom SMTP in Supabase before inviting a whole team.</p><div id="cs-member-error" class="danger" role="alert"></div>`;
-    el.querySelector('#cs-invite').addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.target);memberCall('invite_member',{p_ws:ws,p_email:f.get('email'),p_role:f.get('role')},'Invitation saved')});
+    const provOpts=sel=>`<option value="">— Not linked —</option>`+state.providers.map(p=>`<option value="${h(p.id)}" ${p.id===sel?'selected':''}>${h(p.name)}</option>`).join('');
+    const teamName=d=>h(organizationFor(d).name);
+    el.innerHTML=`<h3>Team access</h3><p class="muted">Link each person to their provider so they see their own schedule and can request time off. Viewers see published schedules of their own team and any team shared with them.</p><div class="tablewrap"><table><thead><tr><th>Member</th><th>Role</th><th>Provider</th><th></th></tr></thead><tbody>${data.members.map(x=>`<tr><td>${h(x.email)}${x.user_id===user.id?' <small class="muted">(you)</small>':''}<br><small class="muted">${x.last_sign_in?'Last sign-in '+h(new Date(x.last_sign_in).toLocaleDateString()):'Never signed in'}</small></td><td><select data-cs="role" data-user="${h(x.user_id)}" aria-label="Role for ${h(x.email)}">${opts(x.role)}</select></td><td><select data-cs="link" data-user="${h(x.user_id)}" aria-label="Provider for ${h(x.email)}">${provOpts(x.provider)}</select></td><td><button class="danger" data-cs="remove" data-user="${h(x.user_id)}" data-email="${h(x.email)}">Remove</button></td></tr>`).join('')}${data.invitations.map(x=>`<tr><td>${h(x.email)}<br><small class="muted">Invited · not signed in yet</small></td><td>${h(roleNames[x.role])}</td><td>${x.provider?h(state.providers.find(p=>p.id===x.provider)?.name||x.provider):'<span class="muted">—</span>'}</td><td><button data-cs="revoke" data-email="${h(x.email)}">Revoke</button></td></tr>`).join('')}</tbody></table></div><form id="cs-invite" class="formgrid" style="margin-top:12px"><label>Email<input type="email" name="email" required maxlength="200"></label><label>Role<select name="role">${opts('viewer')}</select></label><label class="full">Provider<select name="provider">${provOpts('')}</select></label><div class="full"><button class="primary">Invite</button></div></form>
+    <h3 style="margin-top:22px">Shared schedules</h3><p class="muted">Share a team’s published schedule with everyone on another team, or with one person.</p>${data.shares.length?`<div class="tablewrap"><table><thead><tr><th>Schedule</th><th>Shared with</th><th></th></tr></thead><tbody>${data.shares.map(x=>`<tr><td>${teamName(x.dept)}</td><td>${x.withDept?'Everyone on '+teamName(x.withDept):h(x.withEmail||'')}</td><td><button data-cs="unshare" data-id="${Number(x.id)}">Remove</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">Nothing shared yet. Each team sees only its own schedule.</p>'}<form id="cs-share" class="inline-length" style="margin-top:10px"><label>Share<select name="dept">${depts.map(d=>`<option value="${d.id}">${teamName(d.id)}</option>`).join('')}</select></label><label>with<select name="with">${depts.map(d=>`<option value="dept:${d.id}">Everyone on ${teamName(d.id)}</option>`).join('')}${data.members.map(x=>`<option value="user:${h(x.user_id)}">${h(x.email)}</option>`).join('')}</select></label><button class="primary">Share</button></form><p class="muted">Invited people sign in from this site with their email. On the free email service only a few sign-in emails can be sent per hour; configure custom SMTP in Supabase before inviting a whole team.</p><div id="cs-member-error" class="danger" role="alert"></div>`;
+    el.querySelector('#cs-invite').addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.target);memberCall('invite_member',{p_ws:ws,p_email:f.get('email'),p_role:f.get('role'),p_provider:f.get('provider')||null},'Invitation saved')});
+    el.querySelector('#cs-share').addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.target),w=String(f.get('with')),[k,v]=[w.slice(0,w.indexOf(':')),w.slice(w.indexOf(':')+1)];memberCall('share_team',{p_ws:ws,p_dept:f.get('dept'),p_with_dept:k==='dept'?v:null,p_with_user:k==='user'?v:null},'Schedule shared')});
   }
   async function memberCall(fn,args,ok){
     const {data,error}=await sb.rpc(fn,args),el=document.getElementById('cs-members');
@@ -161,12 +182,13 @@
     if(el)renderMembers(el,data);toast(ok);
   }
 
-  document.addEventListener('change',e=>{const t=e.target.closest('[data-cs="role"]');if(t)memberCall('set_member_role',{p_ws:ws,p_user:t.dataset.user,p_role:t.value},'Role updated')});
+  document.addEventListener('change',e=>{const t=e.target.closest('[data-cs="role"]');if(t)memberCall('set_member_role',{p_ws:ws,p_user:t.dataset.user,p_role:t.value},'Role updated');const l=e.target.closest('[data-cs="link"]');if(l)memberCall('set_member_provider',{p_ws:ws,p_user:l.dataset.user,p_provider:l.value||null},'Provider link updated').then(()=>{if(l.dataset.user===user?.id)reload()})});
   document.addEventListener('click',async e=>{
     const t=e.target.closest('[data-cs]');if(!t||t.tagName==='SELECT')return;
     const a=t.dataset.cs;
     if(a==='signout'){e.preventDefault();await sb.auth.signOut();state=migrate({...seed(),providers:[],assignments:[],requests:[]});history.length=0;booted=false;signInScreen('You are signed out.')}
     else if(a==='revoke')memberCall('revoke_invitation',{p_ws:ws,p_email:t.dataset.email},'Invitation revoked');
+    else if(a==='unshare')memberCall('remove_share',{p_ws:ws,p_id:Number(t.dataset.id)},'Share removed');
     else if(a==='remove'){modal(`<h2>Remove ${h(t.dataset.email)}?</h2><p>They will lose access to this workspace immediately.</p><div class="modalactions"><button onclick="closeModal()">Cancel</button><button class="primary danger" data-cs="remove-confirm" data-user="${h(t.dataset.user)}">Remove</button></div>`)}
     else if(a==='remove-confirm'){closeModal();memberCall('remove_member',{p_ws:ws,p_user:t.dataset.user},'Member removed')}
     else if(a==='do-import'&&pendingImport){const data=pendingImport;pendingImport=null;closeModal();checkpoint();state=data;focusRotations();nextMode='import';commit('Restored workspace backup');toast('Restoring backup…')}

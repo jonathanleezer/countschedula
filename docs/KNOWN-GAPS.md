@@ -93,6 +93,19 @@ had no independent security review.
 - Publication history in the published-version view lists dates, who published, and assignment counts; only the
   latest published snapshot can be opened or downloaded.
 
+## Viewer role and Synergy
+
+- Synergy is not connected: "entered in Synergy" is a manual mark by a scheduler. There is no import from or export to
+  Synergy, so CountSchedula cannot detect changes made directly in Synergy.
+- No notifications: schedulers learn about new, changed or withdrawn requests from the Requests page, the Synergy
+  to-do notice and the activity log; viewers are not emailed about decisions.
+- Viewers need working sign-in email (custom SMTP) before they can use the app.
+- Sharing with a person requires that person to have signed in at least once (they must be a member).
+- Viewers see the names of providers on visible teams and their approved time-off dates. Schedulers and admins
+  still see the whole workspace, including reasons.
+- Approved time off can be shortened or withdrawn by the provider without review (by design); extending needs a new
+  request. A rollback snapshot restores schedule data but not Synergy marks.
+
 ## UI and reporting
 
 - Month/week stats use full-month counts; the provider filter does not scope coverage metrics.

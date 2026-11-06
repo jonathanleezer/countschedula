@@ -59,3 +59,15 @@ fieldset.plain{border:0;padding:0;margin:0;min-width:0}
 .pref-grid button.pref-avoid{background:#f8e5e5;border-color:#e0a9a9;color:#a04040}
 .pref-grid button.pref-none{color:#b6bbb3}
 #pref-hint{min-height:1.2em;margin:4px 0 0}
+
+/* Viewers, time off and Synergy */
+.assignment.mine{box-shadow:0 0 0 2px var(--green) inset}
+.off-tag{font-size:9px;color:#7b6a52;background:#f4efe6;border-radius:5px;padding:2px 6px;margin:2px 0;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.synergy-notice{margin:0 0 18px;background:#f3f6fb;border-color:#d5dfee;color:#3d5270}
+.syn{font-size:11px;font-weight:600;white-space:nowrap}
+.syn-ok{color:#3f7d5c}
+.syn-not-entered{color:#a0682c}
+.syn-changed{color:#ae4b4b}
+.my-group{margin-top:16px}
+.my-group .panelhead{margin-bottom:6px}
+tr.muted td{color:var(--muted)}

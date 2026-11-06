@@ -34,6 +34,7 @@ create function public.t_add(st jsonb, a jsonb) returns jsonb language sql as $$
   select jsonb_set(st, '{assignments}', (st->'assignments') || jsonb_build_array(a)) $$;
 create function public.t_set_period(st jsonb, k text, status text) returns jsonb language sql as $$
   select jsonb_set(st, '{periods}', (st->'periods') || jsonb_build_object(k, jsonb_build_object('status', status))) $$;
+create function public.reset_role_count_nov() returns int language sql security definer as $$ select count(*)::int from assignments where workspace_id = 'vm' and dept_id = 'willow' and date between '2026-11-01' and '2026-11-30' $$;
 create function public.t_with_rot(st jsonb, rots jsonb) returns jsonb language sql as $$ select jsonb_set(st, '{rotations}', rots) $$;
 grant execute on all functions in schema public to authenticated;
 -- re-apply the production grants that the line above widened
@@ -53,6 +54,15 @@ select t_assert((select role from members where user_id = :admin and workspace_i
 select t_assert(hook_before_user_created('{"user":{"email":"ADMIN@example.test"}}') = '{}'::jsonb, 'sign-up hook allows invited email');
 select t_assert(hook_before_user_created('{"user":{"email":"stranger@example.test"}}') ? 'error', 'sign-up hook rejects uninvited email');
 
+set role authenticated;
+select t_login(:admin);
+select expect_fail($$select count(*) from departments$$, '42501', 'permission denied');
+select expect_fail($$select count(*) from assignments$$, '42501', 'permission denied');
+select expect_fail($$select count(*) from requests$$, '42501', 'permission denied');
+select t_assert(true, 'API roles cannot read tables directly (RPC-only access)');
+-- test-only: let the remaining assertions read tables; row-level policies still apply to these reads
+reset role;
+grant select on all tables in schema public to authenticated;
 set role authenticated;
 select t_login(:admin);
 select t_assert((select count(*) from departments where workspace_id = 'vm') = 2, 'admin reads own departments via RLS');
@@ -82,7 +92,8 @@ select t_assert((select bool_and((e->>'rotationTarget')::numeric = (e->>'target'
   from jsonb_array_elements(t_st()->'providers') e), 'older backups get rotation limits of 2 x monthly');
 select t_assert(t_st()->'shiftTypes' = (:'sample'::jsonb)->'shiftTypes', 'shift types round-trip exactly');
 select t_assert(t_st()->'assignments' = (:'sample'::jsonb)->'assignments', 'assignments round-trip exactly');
-select t_assert(t_st()->'requests' = (:'sample'::jsonb)->'requests', 'requests round-trip exactly');
+select t_assert((select jsonb_agg(e - 'synergy') from jsonb_array_elements(t_st()->'requests') e) = (:'sample'::jsonb)->'requests', 'requests round-trip exactly');
+select t_assert((t_st()->'requests'->1->'synergy'->>'status') = 'not-entered' and (t_st()->'requests'->0->'synergy'->>'status') = 'none', 'requests carry Synergy status (approved → not entered)');
 select t_assert(t_st()->'rules' = (:'sample'::jsonb)->'rules', 'rules (incl. legacy coverage keys) round-trip');
 select t_assert(jsonb_array_length(list_snapshots('vm')) >= 1, 'import takes a rollback snapshot');
 select t_save(:'sample'::jsonb, 'import');
@@ -269,6 +280,81 @@ select t_assert(jsonb_array_length(t_st()->'teamHolidays') = 3, 'payload without
 select t_login(:admin);
 select t_save(jsonb_set(jsonb_set(t_st(), '{rotations,1,status}', '"Published"'), '{rotations,1,snapshot}', '[]'), 'import');
 select t_assert((select status from rotations where id = 'r-boehm') = 'Published' and (select count(*) from publications where rotation_id = 'r-boehm') = 1, 'import keeps published rotation');
+-- ------------------------------------------------------------ viewer role, sharing, self-service PTO, Synergy
+select invite_member('vm', 'v1@example.test', 'viewer', 'p3');
+select invite_member('vm', 'v2@example.test', 'viewer', 'p-boehm');
+select invite_member('vm', 'v3@example.test', 'viewer');
+select expect_fail($$select invite_member('vm', 'v4@example.test', 'viewer', 'nobody')$$, 'PT422', 'Unknown provider');
+reset role;
+insert into auth.users(id, email) values ('a0000000-0000-0000-0000-000000000005', 'v1@example.test'), ('a0000000-0000-0000-0000-000000000006', 'v2@example.test'), ('a0000000-0000-0000-0000-000000000007', 'v3@example.test');
+set role authenticated;
+select t_assert((select m->>'provider' from jsonb_array_elements(list_members('vm')->'members') m where m->>'email' = 'v1@example.test') = 'p3', 'invited viewer is linked to their provider on sign-up');
+-- publish the Jones November rotation so viewers can see it
+select t_login(:sched);
+select t_save(jsonb_set(t_st(), '{rotations,0,status}', '"Published"'));
+select t_login('a0000000-0000-0000-0000-000000000005');
+select t_assert(get_state('vm')->>'role' = 'viewer' and get_state('vm')->'visibleDepartments' = '["willow"]' and jsonb_array_length(get_state('vm')->'departments') = 1, 'viewer sees only their own team');
+select t_assert(get_state('vm')->'me'->>'provider' = 'p3', 'viewer knows which provider they are');
+select t_assert((select bool_and(r->>'status' = 'Published' and r->>'dept' = 'willow') from jsonb_array_elements(t_st()->'rotations') r) and jsonb_array_length(t_st()->'rotations') = 1, 'viewer sees published rotations of visible teams only');
+select t_assert((select bool_and(a->>'dept' = 'willow' and a->>'date' between '2026-11-01' and '2026-11-30') from jsonb_array_elements(t_st()->'assignments') a)
+  and jsonb_array_length(t_st()->'assignments') = (reset_role_count_nov()), 'viewer sees every assignment of the published rotation, nothing from drafts or other teams');
+select t_assert(not exists (select 1 from jsonb_array_elements(t_st()->'requests') r where r->>'status' <> 'Approved' or r ? 'reason'), 'others’ time off: approved dates only, no reasons');
+select t_assert(t_st()->'rotationDefaults' = '{}'::jsonb and jsonb_array_length(t_st()->'holidayHistory') = 0, 'viewer gets no scheduler settings');
+select expect_fail($$select save_state('vm', get_version('vm'), t_st())$$, 'PT403', 'read-only');
+select expect_fail($$select list_members('vm')$$, 'PT403', 'Administrators');
+select expect_fail($$select mark_synergy('vm', 'rotation', 'r-nov')$$, 'PT403', 'Only schedulers');
+select expect_fail($$select list_publications('vm', 'river', 'r-boehm')$$, 'PT403', 'access to this team');
+-- sharing: Boehm with the Jones team, then with one person
+select t_login(:admin);
+select share_team('vm', 'river', 'willow', null);
+select t_login('a0000000-0000-0000-0000-000000000005');
+select t_assert(get_state('vm')->'visibleDepartments' @> '["willow","river"]' and exists (select 1 from jsonb_array_elements(t_st()->'assignments') a where a->>'dept' = 'river'), 'team share: Jones viewers see Boehm published schedule');
+select t_login(:admin);
+select remove_share('vm', (select (list_members('vm')->'shares'->0->>'id')::bigint));
+select share_team('vm', 'river', null, 'a0000000-0000-0000-0000-000000000005');
+select t_login('a0000000-0000-0000-0000-000000000005');
+select t_assert(get_state('vm')->'visibleDepartments' @> '["river"]', 'person share: this viewer sees Boehm');
+select t_login('a0000000-0000-0000-0000-000000000006');
+select t_assert(get_state('vm')->'visibleDepartments' = '["river"]', 'a Boehm viewer sees only Boehm');
+select t_login('a0000000-0000-0000-0000-000000000007');
+select t_assert(get_state('vm')->'visibleDepartments' = '[]' and jsonb_array_length(t_st()->'assignments') = 0, 'unlinked viewer sees no team schedules');
+select expect_fail($$select submit_request('vm', '2027-03-01', '2027-03-02', 'x')$$, 'PT422', 'not linked');
+select t_login(:admin);
+select expect_fail($$select set_member_provider('vm', 'a0000000-0000-0000-0000-000000000007', 'p3')$$, 'PT422', 'already linked');
+-- self-service PTO
+select t_login('a0000000-0000-0000-0000-000000000005');
+select submit_request('vm', '2027-03-01', '2027-03-05', 'Conference');
+select t_assert(exists (select 1 from jsonb_array_elements(t_st()->'requests') r where r->>'mine' = 'true' and r->>'status' = 'Pending' and r->>'reason' = 'Conference'), 'viewer submits a pending request and sees it in full');
+select update_request('vm', (select r->>'id' from jsonb_array_elements(t_st()->'requests') r where r->>'mine' = 'true'), '2027-03-02', '2027-03-06', 'Conference (moved)');
+select expect_fail($$select update_request('vm', 'r2', '2026-11-23', '2026-11-24', null)$$, 'PT403', 'your own');
+select expect_fail($$select submit_request('vm', '2027-03-05', '2027-03-01', null)$$, 'PT422', 'on or after');
+select t_login(:sched);
+select t_assert((select r->>'via' from jsonb_array_elements(t_st()->'requests') r where r->>'provider' = 'p3' and r->>'status' = 'Pending') = 'app', 'scheduler sees requests submitted in the app');
+select t_save((select jsonb_set(t_st(), array['requests', (o - 1)::text, 'status'], '"Approved"') from jsonb_array_elements(t_st()->'requests') with ordinality j(r, o) where r->>'provider' = 'p3' and r->>'status' = 'Pending'));
+create temp table _rq as select r->>'id' id from jsonb_array_elements(t_st()->'requests') r where r->>'provider' = 'p3' and r->>'status' = 'Approved';
+select t_assert((select r->'synergy'->>'status' from jsonb_array_elements(t_st()->'requests') r where r->>'id' = (select id from _rq)) = 'not-entered', 'approved request needs entering in Synergy');
+select mark_synergy('vm', 'request', (select id from _rq));
+select t_assert((select r->'synergy'->>'status' from jsonb_array_elements(t_st()->'requests') r where r->>'id' = (select id from _rq)) = 'ok', 'marked as entered in Synergy');
+select t_login('a0000000-0000-0000-0000-000000000005');
+select expect_fail(format($$select update_request('vm', %L, '2027-03-01', '2027-03-06', null)$$, (select id from _rq)), 'PT422', 'only be shortened');
+select update_request('vm', (select id from _rq), '2027-03-02', '2027-03-04', 'Conference');
+select t_assert((select r->>'status' from jsonb_array_elements(t_st()->'requests') r where r->>'id' = (select id from _rq)) = 'Approved', 'shortening approved time off applies immediately');
+select t_login(:sched);
+select t_assert((select r->'synergy'->>'status' from jsonb_array_elements(t_st()->'requests') r where r->>'id' = (select id from _rq)) = 'changed', 'change after Synergy entry is flagged');
+select t_login('a0000000-0000-0000-0000-000000000005');
+select withdraw_request('vm', (select id from _rq));
+select t_login(:sched);
+select t_assert((select r->>'status' || '/' || (r->'synergy'->>'status') from jsonb_array_elements(t_st()->'requests') r where r->>'id' = (select id from _rq)) = 'Withdrawn/changed', 'withdrawal is flagged for Synergy');
+select t_assert((select count(*) from audit_log where text like 'Withdrew approved PTO%update Synergy') = 1, 'withdrawal recorded in activity');
+-- rotation Synergy status
+select t_assert((select r->'synergy'->>'status' from jsonb_array_elements(t_st()->'rotations') r where r->>'id' = 'r-nov') = 'not-entered', 'published rotation needs entering in Synergy');
+select mark_synergy('vm', 'rotation', 'r-nov');
+select t_assert((select r->'synergy'->>'status' from jsonb_array_elements(t_st()->'rotations') r where r->>'id' = 'r-nov') = 'ok', 'rotation entered in Synergy');
+select t_save(jsonb_set(t_st(), '{rotations,0,status}', '"Draft"'));
+select t_save(t_st() #- '{assignments,0}');
+select t_assert((select r->'synergy'->>'status' from jsonb_array_elements(t_st()->'rotations') r where r->>'id' = 'r-nov') = 'changed', 'schedule change after Synergy entry is flagged');
+select t_login('a0000000-0000-0000-0000-000000000005');
+select t_assert(jsonb_array_length(t_st()->'rotations') = 1 and not exists (select 1 from jsonb_array_elements(t_st()->'rotations') r where r->>'id' = 'r-nov'), 'reopened (draft) rotation disappears for viewers');
 reset role;
 -- operator removal of a whole workspace (see docs/OPERATIONS.md)
 begin;

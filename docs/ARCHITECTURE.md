@@ -136,6 +136,21 @@ night, client and server may disagree about an interval by up to an hour; the se
   can legally take it or others are ~8 shifts heavier. Calendar cards show ♥/✕, the shift editor shows a hint, and
   Reports count preferred / not-preferred shifts. Server stores and validates only
   (migration `20261106000008_provider_preferences.sql`).
+- **Viewer role and Synergy** (2026-11-06, migration `20261106000009_viewer_role.sql`):
+  - Accounts link to a provider (`members.provider_id`, set at invite or in Settings → Team access).
+  - Visible teams (`cs_visible_depts`): the linked provider's teams, teams shared with those teams, and teams shared
+    with the person (`team_shares`). Admins and schedulers see everything.
+  - `get_state` returns `cs_export_viewer` for viewers: published rotations/periods of visible teams and their
+    assignments only; own requests in full; others' approved requests as dates only (no reasons); no scheduler
+    settings; own activity only. API roles can no longer read tables directly — all access is through RPCs.
+  - Self-service PTO RPCs: `submit_request`, `update_request` (pending: any change; approved: shorten only, applies
+    immediately), `withdraw_request` (status `Withdrawn`). Each bumps the version and is audited.
+  - Synergy (Vanderbilt's record of fact): `mark_synergy` records that a published rotation or a PTO request was
+    entered; the export reports `synergy.status` = `not-entered` / `changed` / `ok` / `none` by comparing the current
+    rotation assignments (date, shift, provider) or request (dates, status) with what was marked.
+  - Client: viewers get My schedule, a read-only Schedule (own shifts outlined, "Off" markers), Time off, Settings.
+    Schedulers see Synergy columns on Requests and Rotations and a to-do notice on Schedule; anyone with a linked
+    provider also gets My schedule.
 - **Locks:** `isPublished(dept, day)` is true inside a published rotation of that team or a published
   legacy month. Legacy month publications remain valid.
 - **Coverage:** `required(dept, day, type)` returns a holiday's override for that type, else the type's daily

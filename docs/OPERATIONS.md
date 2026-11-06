@@ -46,6 +46,15 @@ For a change: add a new timestamped file (never edit an applied one), run `npm r
   `public.hook_before_user_created`).
 - The first admin invitation (jonathan.leezer@gmail.com) was created by `cs_bootstrap_workspace`.
 
+### Onboarding providers as viewers
+
+1. Settings → Team access → Invite: email, role **Viewer**, and their **Provider** record (links the account).
+2. They open the site, request a sign-in link, and land on **My schedule**.
+3. To let a team see another team's schedule: Settings → Shared schedules (whole team, or one person who has signed in).
+4. Their time-off requests appear on Requests marked "via app". After approving, shortening or withdrawals, enter the
+   change in Synergy and click **Mark entered** / **Mark updated**. Published rotations have the same Synergy column on
+   the Rotations page; the Schedule page lists anything still to enter.
+
 ### Email delivery (action needed before inviting others)
 
 The project uses Supabase's built-in email sender. On the Free plan it only delivers to members of the

@@ -57,6 +57,12 @@ Confirmed by the user:
 - Weeks start on the weekday of each rotation's start date (a Monday rotation runs Mon–Sun), rotation by rotation.
 - Each provider has shift preferences by weekday and shift type (prefer / prefer not / no preference). The generator
   favours preferred shifts and assigns not-preferred ones only when needed for coverage and balance.
+- Viewer role (most users): see their own schedule, their team's published schedule and schedules shared with them or
+  their team (team-to-team or person sharing); submit, change and withdraw their own time off. Viewers see published
+  rotations only and others' approved time-off dates without reasons. Withdrawing or shortening approved time off
+  applies immediately; extra days need a new request.
+- Synergy (maintained by Vanderbilt) is the record of fact for schedules and PTO. CountSchedula changes count only once
+  entered in Synergy; schedulers mark published rotations and PTO decisions as entered, and later changes are flagged.
 - Holidays are defined per team (each team keeps its own holiday calendar and staffing), with optional
   one-off holidays on a single rotation.
 
