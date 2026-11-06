@@ -55,6 +55,8 @@ Confirmed by the user:
 - Shift types are assigned to days of the week per rotation (team default pattern at rotation creation), with
   optional date-specific shift assignments inside the rotation.
 - Weeks start on the weekday of each rotation's start date (a Monday rotation runs Mon–Sun), rotation by rotation.
+- Each provider has shift preferences by weekday and shift type (prefer / prefer not / no preference). The generator
+  favours preferred shifts and assigns not-preferred ones only when needed for coverage and balance.
 - Holidays are defined per team (each team keeps its own holiday calendar and staffing), with optional
   one-off holidays on a single rotation.
 

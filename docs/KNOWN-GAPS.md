@@ -81,6 +81,9 @@ had no independent security review.
 - When both teams are shown and their rotations start on different weekdays, the calendar uses the editing
   target team's week start.
 - The consecutive-workdays rule counts calendar days and is not tied to rotation weeks.
+- Preferences are weekly (shift type × weekday). Date-specific wishes use time-off requests for now; there are no
+  preference strengths, per-provider limits on not-preferred shifts, or pattern preferences (e.g. "nights in a row").
+- Preference weights are fixed constants (PREF_BONUS 2, AVOID_PENALTY 4); tune them with real schedules.
 - Standard US holidays offered: New Year's Day, Memorial Day, Independence Day, Labor Day, Thanksgiving,
   Christmas Eve, Christmas Day, New Year's Eve. Edit per rotation as needed.
 - Teams with rotations have no coverage requirement (and no open shifts) outside their rotations; this is a client

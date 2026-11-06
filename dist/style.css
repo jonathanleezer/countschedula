@@ -49,3 +49,13 @@ fieldset.plain{border:0;padding:0;margin:0;min-width:0}
 .rotation-setup{border:0;max-width:760px}
 .rotation-setup h2{margin:0 0 6px}
 .rotation-setup form{margin:16px 0 10px}
+
+/* Provider preferences */
+.pref-ok{color:#3f7d5c}
+.pref-no{color:#ae4b4b}
+.pref-mark{margin-left:4px;font-weight:700}
+.pref-grid button.pref{width:30px;height:28px;padding:0;font-size:13px;line-height:1;border-radius:6px}
+.pref-grid button.pref-prefer{background:#e4f1ea;border-color:#9cc8b0;color:#2f6b4c}
+.pref-grid button.pref-avoid{background:#f8e5e5;border-color:#e0a9a9;color:#a04040}
+.pref-grid button.pref-none{color:#b6bbb3}
+#pref-hint{min-height:1.2em;margin:4px 0 0}

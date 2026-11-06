@@ -155,4 +155,25 @@ let fake={preventDefault(){},target:null};const FD=globalThis.FormData;globalThi
 quickCreateRotations(fake);globalThis.FormData=FD;
 must(rotationsOf('willow').length===3&&mode==='Rotation'&&period().rotation.start==='2026-11-02'&&rotationsOf('willow')[0].holidays.some(h=>h.name==='Thanksgiving Day'),'Quick create makes rotations with team holidays and opens the first');
 must(schedule().includes('class="calendar ')&&calendarCells().split('<div class="dow">')[1].startsWith('Mon'),'Rotation calendar appears, weeks Mon–Sun');
-console.log('PASS: Rotation view set-up for teams without rotations (prefilled, quick create); weeks start on each rotation’s start weekday (rotation/week/month views, week numbers, grid order); weekly shift patterns per rotation (team default, weekday selection, date-specific shifts, precedence, validation, generation); rotation-first views (month/week target the covering rotation, no month fallback, no coverage outside rotations, rotation/month/week reports, request rotations, CSV rotation, rotation-first sample); team holiday calendars (rules, per-team, copy, sync, frozen when published), per-rotation limits migration, durations, per-team rotations from defaults, standard holidays, validation, holiday coverage overrides, year-over-year holiday rotation, rotation generation/max/publish/locks, rendering, CSV');`,ctx);
+// provider shift preferences (soft): prefer is favoured, avoid used only when needed
+const run=prefs=>{state=migrate(seed());rotationSel={};mode='Rotation';dept='willow';cursor=new Date(2026,10,1);seedRotations();for(let [pid,pr] of Object.entries(prefs))provider(pid).preferences=pr;generate(true);
+ let R=period();return {open:coverageMissing().length,conflicts:validateAll().length,asg:relevant()}};
+const tueWedNights=(asg,pid)=>asg.filter(a=>a.provider===pid&&a.shift==='night'&&[2,3].includes(date(a.date).getDay())).length;
+const friDays=(asg,pid)=>asg.filter(a=>a.provider===pid&&a.shift==='day'&&date(a.date).getDay()===5).length;
+let base=run({}),withP=run({p3:{weekly:{'night:2':'prefer','night:3':'prefer'}},p5:{weekly:{'day:5':'avoid'}}});
+must(withP.open===0&&withP.conflicts===0,'Preferences never cost coverage or break rules');
+must(tueWedNights(withP.asg,'p3')>tueWedNights(base.asg,'p3')&&tueWedNights(withP.asg,'p3')>=8,'Preferred Tue/Wed nights go to the provider: '+tueWedNights(base.asg,'p3')+' → '+tueWedNights(withP.asg,'p3')+' of 16');
+must(friDays(withP.asg,'p5')===0&&friDays(base.asg,'p5')>0,'Avoided Friday days are not assigned when others can cover: '+friDays(base.asg,'p5')+' → '+friDays(withP.asg,'p5'));
+let loads=state.providers.filter(p=>p.affiliations.includes('willow')).map(p=>withP.asg.filter(a=>a.provider===p.id).length);
+must(Math.max(...loads)-Math.min(...loads.filter((x,i)=>state.providers[i].target>=10))<=6,'Workload stays balanced with preferences: '+loads.join(','));
+// avoid is still used when it is the only way to fill the shift
+state=migrate(seed());rotationSel={};mode='Rotation';dept='willow';cursor=new Date(2026,10,1);seedRotations();
+for(let p of state.providers)p.preferences={weekly:{'day:5':'avoid'}};generate(true);
+must(coverageMissing().length===0,'When everyone avoids Friday days they are still covered');
+must(prefFor('p0','day','2026-11-06')==='avoid'&&prefFor('p0','night','2026-11-06')===undefined,'prefFor by shift and weekday');
+const badP=(pr,msg)=>{try{validatePreferences(pr,'X');throw Error('accepted: '+msg)}catch(e){if(e.message.startsWith('accepted'))throw e}};
+badP({weekly:{'day:7':'prefer'}},'weekday 7');badP({weekly:{'day:1':'love'}},'bad value');badP({weekly:[]},'array');validatePreferences({weekly:{'night:2':'prefer'}},'ok');
+provider('p0').preferences={weekly:{'night:2':'prefer','day:5':'avoid'}};let sum=prefSummary(provider('p0'));
+must(sum.includes('♥ Night Tue')&&sum.includes('✕ Day Fri'),'Preference summary: '+sum);
+let html3=calendarCells()+providersPage()+reportsPage();must(html3.includes('pref-mark')&&!html3.includes('undefined')&&!html3.includes('NaN'),'Preference marks and report columns render');
+console.log('PASS: provider shift preferences (prefer favoured, avoid only when needed, coverage and balance kept, validation, marks); Rotation view set-up for teams without rotations (prefilled, quick create); weeks start on each rotation’s start weekday (rotation/week/month views, week numbers, grid order); weekly shift patterns per rotation (team default, weekday selection, date-specific shifts, precedence, validation, generation); rotation-first views (month/week target the covering rotation, no month fallback, no coverage outside rotations, rotation/month/week reports, request rotations, CSV rotation, rotation-first sample); team holiday calendars (rules, per-team, copy, sync, frozen when published), per-rotation limits migration, durations, per-team rotations from defaults, standard holidays, validation, holiday coverage overrides, year-over-year holiday rotation, rotation generation/max/publish/locks, rendering, CSV');`,ctx);

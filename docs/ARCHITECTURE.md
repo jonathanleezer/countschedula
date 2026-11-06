@@ -129,6 +129,13 @@ night, client and server may disagree about an interval by up to an hour; the se
   shows whole weeks from the start date with "Week N" labels; Week view and Month view columns follow the
   rotation covering the cursor (the target team's); the weekly-shifts grid uses the same order. Teams without
   rotations use Sunday. Display only: patterns store absolute weekdays, so the server is unaffected.
+- **Provider shift preferences** (2026-11-06): `provider.preferences.weekly` = `{"<shiftType>:<weekday>": "prefer"|"avoid"}`,
+  edited as a grid in Providers → Edit. Soft only: the generator subtracts `PREF_BONUS` (2) for prefer and adds
+  `AVOID_PENALTY` (4) for avoid to a candidate's score (one extra shift ≈ 10/target ≈ 0.5 at target 20), so a
+  preferred shift goes to that provider unless they are ~4 shifts ahead, and an avoided one only when nobody else
+  can legally take it or others are ~8 shifts heavier. Calendar cards show ♥/✕, the shift editor shows a hint, and
+  Reports count preferred / not-preferred shifts. Server stores and validates only
+  (migration `20261106000008_provider_preferences.sql`).
 - **Locks:** `isPublished(dept, day)` is true inside a published rotation of that team or a published
   legacy month. Legacy month publications remain valid.
 - **Coverage:** `required(dept, day, type)` returns a holiday's override for that type, else the type's daily

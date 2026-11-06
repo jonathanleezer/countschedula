@@ -243,6 +243,15 @@ select t_save(jsonb_set(jsonb_set(t_st() #- '{rotations,0,pattern}', '{rotations
 select expect_fail($$select t_save(jsonb_set(t_st(), '{rotations,0,pattern}', '{"day":{"days":[1],"count":1}}'))$$, 'PT422', 'Reopen Nov rotation before changing its dates, weekly shifts');
 select expect_fail($$select t_save(jsonb_set(t_st(), '{rotations,0,dateShifts}', '{"2026-11-27":{"triage":1}}'))$$, 'PT422', 'Reopen Nov rotation before changing');
 select t_save(jsonb_set(t_st(), '{rotations,0,status}', '"Draft"'));
+-- provider shift preferences (stored and validated; soft rules, never blocking)
+select t_save(jsonb_set(t_st(), '{providers,3,preferences}', '{"weekly":{"night:2":"prefer","night:3":"prefer","day:5":"avoid"}}'));
+select t_assert(t_st()->'providers'->3->'preferences'->'weekly'->>'day:5' = 'avoid' and not (t_st()->'providers'->0 ? 'preferences'), 'preferences round-trip; absent when unset');
+select t_save(jsonb_set(t_st(), '{providers}', (select jsonb_agg(e - 'preferences') from jsonb_array_elements(t_st()->'providers') e)));
+select t_assert(t_st()->'providers'->3->'preferences'->'weekly'->>'night:2' = 'prefer', 'payload without preferences keeps them (older clients)');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{providers,3,preferences}', '{"weekly":{"night:9":"prefer"}}'))$$, 'PT422', 'Invalid provider record');
+select expect_fail($$select t_save(jsonb_set(t_st(), '{providers,3,preferences}', '{"weekly":{"night:2":"love"}}'))$$, 'PT422', 'Invalid provider record');
+select t_save(jsonb_set(t_st(), '{providers,3,preferences}', 'null'));
+select t_assert(not (t_st()->'providers'->3 ? 'preferences'), 'preferences can be cleared');
 -- per-team holiday calendars
 select t_save(jsonb_set(t_st(), '{teamHolidays}', '[{"id":"th-xmas","dept":"willow","name":"Christmas Day","kind":"fixed","month":12,"day":25,"coverage":{"day":2}},
   {"id":"th-tg","dept":"willow","name":"Thanksgiving Day","kind":"nth","month":11,"weekday":4,"nth":4,"coverage":{}},

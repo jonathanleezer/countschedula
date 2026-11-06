@@ -239,6 +239,21 @@ await rm.evaluate(()=>{state.rotationDefaults={willow:{start:'2026-11-01',length
 ok('Rotations page has no horizontal page overflow on a phone',await rm.evaluate(()=>document.documentElement.scrollWidth<=390),String(await rm.evaluate(()=>document.documentElement.scrollWidth)));
 await rm.screenshot({path:out+'/r4-rotations-mobile.png',fullPage:true});
 ok('No JS errors (rotations)',rerr.length===0,rerr.join(' | '));
+// provider shift preferences
+const pp=await (await b.newContext({viewport:{width:1366,height:900}})).newPage();const perr=[];pp.on('pageerror',e=>perr.push(e.message));
+await pp.goto(URL);await pp.waitForSelector('.calendar');await pp.evaluate(()=>{localStorage.clear()});await pp.reload();await pp.waitForSelector('.calendar');
+await pp.click('#nav button:has-text("Providers")');await pp.click('tr:has-text("Rachel Morgan") button:has-text("Edit")');await pp.waitForSelector('#modal[open] .pref-grid');
+await pp.click('#modal button.pref[data-k="night:2"]');await pp.click('#modal button.pref[data-k="night:3"]');
+await pp.click('#modal button.pref[data-k="day:5"]');await pp.click('#modal button.pref[data-k="day:5"]');
+ok('Preference cells cycle · → ♥ → ✕ with readable labels',(await pp.getAttribute('#modal button.pref[data-k="day:5"]','aria-label'))==='Day Friday: prefers not'&&(await pp.textContent('#modal button.pref[data-k="night:2"]'))==='♥');
+await pp.screenshot({path:out+'/p1-preferences.png'});await pp.click('#modal button.primary');await pp.waitForTimeout(150);
+ok('Preferences saved and summarised on Providers',await pp.evaluate(()=>{let w=provider('p3').preferences.weekly;return Object.keys(w).length===3&&w['night:2']==='prefer'&&w['night:3']==='prefer'&&w['day:5']==='avoid'})&&(await pp.textContent('tr:has-text("Rachel Morgan")')).includes('♥ Night Tue, Wed'));
+await pp.evaluate(()=>assignmentDialog(null,'2026-11-06','day','p3','willow'));await pp.waitForSelector('#modal[open]');
+ok('Shift editor warns about a not-preferred shift',(await pp.textContent('#pref-hint')).includes('prefers not to work Friday Day'));
+await pp.selectOption('#modal select[name=shift]','night');await pp.fill('#modal input[name=date]','2026-11-10');await pp.dispatchEvent('#modal input[name=date]','change');
+ok('…and notes a preferred shift',(await pp.textContent('#pref-hint')).includes('prefers to work Tuesday Night'));
+await pp.click('#modal button:has-text("Cancel")');
+ok('No JS errors (preferences)',perr.length===0,perr.join(' | '));
 await b.close();
 finish(0);
 })().catch(e=>{console.error(e);results.push(['FAIL','Test run aborted',e.message.split('\n')[0]]);finish(1)});
