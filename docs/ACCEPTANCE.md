@@ -46,6 +46,11 @@ These checks do not certify complete clinical correctness.
 - Live check (2026-11-06, QA workspace, since deleted): provider preferences set in the editor and stored on the server;
   generation gave the Tue/Wed-night provider 9 of 16 of those nights and the Friday-day avoider none, with full coverage
   and no conflicts; marks shown; preferences persist after reload.
+- Live check (2026-11-06, QA workspace with a test admin and two test viewers, since deleted): invite with provider link;
+  viewer lands on My schedule; sees only the published Jones rotation (112 shifts), read-only calendar with own shifts;
+  direct table reads and save_state refused (403); submits a request (via app); scheduler approves (Not in Synergy),
+  marks entered; viewer shortens (applies, flagged Changed) and withdraws; rotation Synergy status; team share makes
+  Boehm visible; unlinked viewer sees an explanation and no data.
 
 ## Before wider release
 
