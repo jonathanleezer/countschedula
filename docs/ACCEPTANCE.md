@@ -51,6 +51,9 @@ These checks do not certify complete clinical correctness.
   direct table reads and save_state refused (403); submits a request (via app); scheduler approves (Not in Synergy),
   marks entered; viewer shortens (applies, flagged Changed) and withdraws; rotation Synergy status; team share makes
   Boehm visible; unlinked viewer sees an explanation and no data.
+- Live check (2026-11-06, QA workspace, since deleted): My schedule list by default, calendar view remembered after
+  signing back in, colleague's shifts shown by name, Escape closes the picker, Find a trade listed 5 colleagues who
+  could cover and 53 two-way swaps, colleagues table in list view, fits a 390px phone.
 
 ## Before wider release
 
