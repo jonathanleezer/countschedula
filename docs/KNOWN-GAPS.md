@@ -96,8 +96,9 @@ had no independent security review.
 ## Viewer role and Synergy
 
 - My schedule remembers the last view and colleagues per device (browser storage), not across devices.
-- "Weekend" for trades means a shift starting Friday 12:00 through Sunday 23:59; confirm this matches the practice's
-  definition (it does not change any scheduling rule).
+- "Weekend" for trades (confirmed with the practice, 2026-11-06): a shift starting after 12:00 on Friday (in practice the
+  Friday Night shift) or any shift starting on Saturday or Sunday. A new shift type starting Friday afternoon (e.g.
+  13:00) would also count. This only affects trade matching, not scheduling rules.
 - Trade suggestions use only the published schedules the viewer can see (not other teams' shifts or others'
   unapproved time off). There is no in-app trade request or approval yet; the scheduler makes the change.
 - Synergy is not connected: "entered in Synergy" is a manual mark by a scheduler. There is no import from or export to

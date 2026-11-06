@@ -56,6 +56,9 @@ must(fs({from:'2026-12-08'}).swaps.every(s=>s.b.date>='2026-12-08'),'open-ended 
 const K=(d,sh)=>shiftKind({date:d,shift:sh});
 must(K('2026-12-11','night').weekend&&K('2026-12-11','night').night,'Friday night = weekend night');
 must(!K('2026-12-11','day').weekend,'Friday day (starts 7a) is not a weekend shift');
+state.shiftTypes.push({id:'t-noon',name:'Noon',start:'12:00',end:'20:00',color:'#999999',coverage:0,night:false,active:true},{id:'t-1pm',name:'One PM',start:'13:00',end:'21:00',color:'#999999',coverage:0,night:false,active:true});
+must(!K('2026-12-11','t-noon').weekend&&K('2026-12-11','t-1pm').weekend,'weekend starts after noon on Friday, not at noon');
+state.shiftTypes=state.shiftTypes.filter(t=>!t.id.startsWith('t-'));
 must(K('2026-12-12','day').weekend&&K('2026-12-13','night').weekend&&!K('2026-12-14','day').weekend,'Saturday and Sunday (incl. Sunday night) are weekend; Monday is not');
 // my Mon Dec 7 Day: like-for-like keeps only weekday day shifts
 let like=fs({like:true}).swaps;must(like.length>0&&like.every(s=>!shiftKind(s.b).night&&!shiftKind(s.b).weekend),'weekday day shift → weekday day swaps only');

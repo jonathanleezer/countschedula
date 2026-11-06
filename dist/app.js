@@ -337,9 +337,10 @@ function tradeOptions(aid){let me=myProvider(),a=state.assignments.find(x=>x.id=
 // Filters for the trade finder: colleagues (null = everyone) and dates that work (specific dates and/or a range).
 let tradeFilter={people:null,dates:[],from:'',to:'',like:true},tradeCache=null;
 // How people trade in practice: nights for nights, weekend shifts for weekend shifts.
-// A weekend shift starts between Friday 12:00 and Sunday 23:59 (Friday PM through Sunday PM).
+// A weekend shift starts after 12:00 on Friday, or any time on Saturday or Sunday (confirmed by the practice:
+// on Friday that is the Night shift; every Saturday and Sunday shift counts).
 const WEEKEND_FROM_FRIDAY_MINUTES=12*60;
-function shiftKind(a){let t=shiftType(a.shift),dow=date(a.date).getDay(),m=t?minutes(t.start):0;return {night:!!t?.night,weekend:dow===6||dow===0||(dow===5&&m>=WEEKEND_FROM_FRIDAY_MINUTES)}}
+function shiftKind(a){let t=shiftType(a.shift),dow=date(a.date).getDay(),m=t?minutes(t.start):0;return {night:!!t?.night,weekend:dow===6||dow===0||(dow===5&&m>WEEKEND_FROM_FRIDAY_MINUTES)}}
 function sameKind(a,b){let x=shiftKind(a),y=shiftKind(b);return x.night===y.night&&x.weekend===y.weekend}
 function kindTags(a){let k=shiftKind(a);return (k.night?'<span class="kind-tag night">Night</span>':'')+(k.weekend?'<span class="kind-tag weekend">Weekend</span>':'')}
 function tradeDateOK(d,f=tradeFilter){let any=f.dates.length||f.from||f.to;if(!any)return true;if(f.dates.includes(d))return true;if(f.from||f.to)return (!f.from||d>=f.from)&&(!f.to||d<=f.to);return false}
