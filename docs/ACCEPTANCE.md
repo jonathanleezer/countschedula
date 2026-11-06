@@ -54,6 +54,9 @@ These checks do not certify complete clinical correctness.
 - Live check (2026-11-06, QA workspace, since deleted): My schedule list by default, calendar view remembered after
   signing back in, colleague's shifts shown by name, Escape closes the picker, Find a trade listed 5 colleagues who
   could cover and 53 two-way swaps, colleagues table in list view, fits a 390px phone.
+- Live check (2026-11-06, QA workspace, since deleted): Find a trade on a Saturday night showed 12 same-kind swaps
+  (all weekend nights, 55 with the switch off, same kind first); colleagues None → 0; a chosen date and a from-date
+  range narrowed correctly; Clear dates restored the list.
 
 ## Before wider release
 
