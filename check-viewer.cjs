@@ -20,6 +20,7 @@ let cal=calendarCells();
 must(!cal.includes('class="add"')&&!cal.includes('assignment open')&&!cal.includes('onclick="assignmentDialog'),'viewer calendar is read-only (no add buttons, open slots or editors)');
 must(cal.includes('assignment mine')&&cal.includes('Off · Mia Patel'),'own shifts highlighted; others’ approved time off shown as Off');
 must(!/draggable="true"/.test(cal),'nothing is draggable for viewers');
+must(!cal.includes('>Locked<')&&!schedule().includes('Reopen draft'),'viewers see no scheduler lock wording');
 let sch=schedule();must(!sch.includes('generateDialog()')&&!sch.includes('Your team, ready to go')&&sch.includes('Synergy is the official record')&&sch.includes('>Team'),'viewer schedule hides scheduler tools');
 let to=myTimeOffPage();must(to.includes('Dentist')&&to.includes('myRequestDialog(\\'mine1\\')')&&to.includes('Shorten')&&!to.includes('Mia Patel'),'Time off lists only the viewer’s requests with edit, shorten and withdraw');
 must(requestsPage()===myTimeOffPage(),'Requests routes viewers to their Time off page');
