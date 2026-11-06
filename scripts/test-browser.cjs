@@ -132,6 +132,14 @@ const rp=await (await b.newContext({viewport:{width:1366,height:900}})).newPage(
 await rp.goto(URL);await rp.waitForSelector('.calendar');await rp.evaluate(()=>{localStorage.clear()});await rp.reload();await rp.waitForSelector('.calendar');
 await rp.evaluate(()=>{state.rotations=[];state.teamHolidays=[];state.rotationDefaults={};state.assignments=state.assignments.filter(a=>a.date<'2026-12-01');rotationSel={};mode=defaultMode();persist();render()});
 ok('A team without rotations is told to set them up',(await rp.textContent('#main')).includes('has no rotations yet')&&await rp.evaluate(()=>mode==='Month'));
+// the Rotation button works without rotations: it shows a set-up panel (regression: it used to snap back to Month)
+await rp.evaluate(()=>{state.rotationDefaults={willow:{start:'2026-11-02',length:8,unit:'weeks'}};persist();render()});
+await rp.click('.segmented button:has-text("Rotation")');await rp.waitForSelector('.rotation-setup');
+ok('Rotation button stays selected and shows set-up, prefilled from defaults',await rp.evaluate(()=>mode==='Rotation')&&(await rp.getAttribute('.segmented button.selected','onclick')).includes('Rotation')&&(await rp.inputValue('.rotation-setup input[name=start]'))==='2026-11-02'&&await rp.isDisabled('button:has-text("Generate")'));
+await rp.screenshot({path:out+'/r0-rotation-setup.png'});
+await rp.fill('.rotation-setup input[name=count]','2');await rp.click('.rotation-setup button.primary');await rp.waitForSelector('.calendar .day');
+ok('Create rotations opens the Rotation view (Mon–Sun from Nov 2)',await rp.evaluate(()=>mode==='Rotation'&&rotationsOf('willow').length===2)&&(await rp.locator('.calendar .dow').first().textContent())==='Mon'&&(await rp.locator('.calendar .day').first().getAttribute('data-date'))==='2026-11-02');
+await rp.evaluate(()=>{state.rotations=[];state.rotationDefaults={};rotationSel={};mode='Month';persist();render()});
 await rp.click('#nav button:has-text("Rotations")');await rp.waitForSelector('form[onsubmit^="saveRotationDefaults"]');
 await rp.fill('form[onsubmit^="saveRotationDefaults"] input[name=start]','2026-11-01');await rp.fill('form[onsubmit^="saveRotationDefaults"] input[name=length]','8');
 await rp.click('form[onsubmit^="saveRotationDefaults"] button.primary');await rp.waitForTimeout(150);

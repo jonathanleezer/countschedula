@@ -46,3 +46,6 @@ fieldset.plain{border:0;padding:0;margin:0;min-width:0}
 .pattern-grid button{font-size:9px;padding:3px 5px;margin-left:2px}
 .pattern-grid input[type=number]{width:48px}
 .wk-label{font-size:9px;font-weight:600;color:var(--muted);margin-left:4px;white-space:nowrap}
+.rotation-setup{border:0;max-width:760px}
+.rotation-setup h2{margin:0 0 6px}
+.rotation-setup form{margin:16px 0 10px}

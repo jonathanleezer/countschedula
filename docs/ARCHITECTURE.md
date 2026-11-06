@@ -112,7 +112,8 @@ night, client and server may disagree about an interval by up to an hour; the se
   rotation — in Month/Week it is the rotation covering the viewed dates (`anchorDay()`: mid-month / mid-week),
   unless one was picked in the toolbar — and there is no calendar-month fallback; `required()` is 0 on days
   outside that team's rotations, so no open shifts appear there. Teams without rotations keep month periods and
-  see a "Set up rotations" notice. Reports follow the same Rotation/Month/Week scope (`reportScope()`) and add a
+  see a "Set up rotations" notice; their Rotation view shows a set-up panel (prefilled from the team's rotation
+  defaults) that creates rotations in one step and opens the first one. Reports follow the same Rotation/Month/Week scope (`reportScope()`) and add a
   rotation-by-rotation provider table; the Rotations page shows publication dates and a published-version view
   (snapshot vs. current, history in shared mode via `list_publications`); Requests show the rotations they
   touch; CSV has a Rotation column. The local pilot sample seeds 8-week rotations and standard holidays for both
