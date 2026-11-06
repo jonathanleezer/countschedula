@@ -43,6 +43,9 @@ These checks do not certify complete clinical correctness.
   Monday rotation shown Mon–Sun with week labels, server-confirmed generation (40 weekday Clinic AM, 2 Triage on the
   chosen date, no gaps or conflicts), publish, refusal to change a published rotation's weekly shifts, published
   version with publication history.
+- Live check (2026-11-06, QA workspace, since deleted): provider preferences set in the editor and stored on the server;
+  generation gave the Tue/Wed-night provider 9 of 16 of those nights and the Friday-day avoider none, with full coverage
+  and no conflicts; marks shown; preferences persist after reload.
 
 ## Before wider release
 
