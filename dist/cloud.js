@@ -169,7 +169,7 @@
     else if(a==='revoke')memberCall('revoke_invitation',{p_ws:ws,p_email:t.dataset.email},'Invitation revoked');
     else if(a==='remove'){modal(`<h2>Remove ${h(t.dataset.email)}?</h2><p>They will lose access to this workspace immediately.</p><div class="modalactions"><button onclick="closeModal()">Cancel</button><button class="primary danger" data-cs="remove-confirm" data-user="${h(t.dataset.user)}">Remove</button></div>`)}
     else if(a==='remove-confirm'){closeModal();memberCall('remove_member',{p_ws:ws,p_user:t.dataset.user},'Member removed')}
-    else if(a==='do-import'&&pendingImport){const data=pendingImport;pendingImport=null;closeModal();checkpoint();state=data;nextMode='import';commit('Restored workspace backup');toast('Restoring backup…')}
+    else if(a==='do-import'&&pendingImport){const data=pendingImport;pendingImport=null;closeModal();checkpoint();state=data;focusRotations();nextMode='import';commit('Restored workspace backup');toast('Restoring backup…')}
     else if(a==='snap-download'||a==='snap-rollback'){
       const {data,error}=await sb.rpc('get_snapshot',{p_ws:ws,p_id:Number(t.dataset.id)});
       if(error||!data){toast('Could not load snapshot: '+errorText(error));return}
@@ -177,6 +177,6 @@
       modal(`<h2>Roll back the shared workspace?</h2><p>Everything returns to the snapshot from ${h(new Date(t.dataset.at).toLocaleString())}. The current state is saved as a new snapshot first, so this can be undone the same way.</p><div class="modalactions"><button onclick="closeModal()">Cancel</button><button class="primary" data-cs="snap-confirm" data-id="${Number(t.dataset.id)}">Roll back</button></div>`);
       pendingImport={snapshotId:Number(t.dataset.id),data};
     }
-    else if(a==='snap-confirm'&&pendingImport?.snapshotId){const data=pendingImport.data;pendingImport=null;closeModal();checkpoint();state=migrate(data);nextMode='import';commit('Rolled back to snapshot #'+t.dataset.id);toast('Rolling back…')}
+    else if(a==='snap-confirm'&&pendingImport?.snapshotId){const data=pendingImport.data;pendingImport=null;closeModal();checkpoint();state=migrate(data);focusRotations();nextMode='import';commit('Rolled back to snapshot #'+t.dataset.id);toast('Rolling back…')}
   });
 })();

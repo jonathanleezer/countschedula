@@ -228,6 +228,11 @@ await rp.click('#rotation-table tbody tr:first-child button:has-text("Open")');a
 ok('Rotation view runs Mon–Sun from the start date',(await rp.locator('.calendar .dow').first().textContent())==='Mon'&&(await rp.locator('.calendar .day').first().getAttribute('data-date'))==='2026-11-02'&&(await rp.textContent('.calhead')).includes('weeks start Mon'));
 await rp.click('.segmented button:has-text("Week")');ok('Week view inside it also starts Monday',(await rp.locator('.calendar .dow').first().textContent())==='Mon'&&await rp.evaluate(()=>date(visibleRange().start).getDay()===1));
 await rp.click('.segmented button:has-text("Rotation")');await rp.evaluate(()=>{dept='willow'});
+// restoring a backup that has rotations opens the Rotation view on them
+const withRot=await rp.evaluate(()=>JSON.stringify(state));const rotFile=path.join(out,'with-rotations.json');fs.writeFileSync(rotFile,withRot);
+await rp.evaluate(()=>{mode='Month';cursor=new Date(2026,9,1);navigate('Settings')});await rp.locator('input[type=file]').setInputFiles(rotFile);await rp.waitForTimeout(400);
+await rp.evaluate(()=>navigate('Schedule'));
+ok('After restore, the Schedule opens on the Rotation view of the loaded rotations',await rp.evaluate(()=>mode==='Rotation'&&period().kind==='rotation')&&(await rp.locator('.calendar .day').first().getAttribute('data-date'))===await rp.evaluate(()=>period().start));
 // mobile: rotations page fits
 const rm=await (await b.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true})).newPage();await rm.goto(URL);await rm.waitForSelector('.calendar');
 await rm.evaluate(()=>{state.rotationDefaults={willow:{start:'2026-11-01',length:8,unit:'weeks'}};addStandardTeamHolidays();addRotations(2);navigate('Rotations')});await rm.waitForTimeout(200);
